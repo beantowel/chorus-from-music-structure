@@ -1,0 +1,94 @@
+<!DOCTYPE HTML>
+
+<html>
+
+<head>
+    <title>
+        Music Structure Viewer
+    </title>
+    <script src="js/script.js"></script>
+    <style>
+        .button {
+            background-color: #4CAF50;
+            /* Green */
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            -webkit-transition-duration: 0.4s;
+            /* Safari */
+            transition-duration: 0.4s;
+            cursor: pointer;
+        }
+
+        .button1 {
+            background-color: white;
+            color: black;
+            border: 2px solid #4CAF50;
+        }
+
+        .button1:hover {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .button2 {
+            background-color: white;
+            color: black;
+            border: 2px solid #f44336;
+        }
+
+        .button2:hover {
+            background-color: #f44336;
+            color: white;
+        }
+
+        .button3 {
+            background-color: #9D9D9D;
+            color: black;
+            border: 2px solid black;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>
+        Html viewer (audio player) for music structure analysis
+        <!-- <a href="https://github.com/beantowel/Lab_StructAnalysis">
+            project
+        </a> -->
+    </h1>
+
+    <p>
+        <h2>
+            Select audio annotation
+        </h2>
+        <label class='button button1'>
+            Select file
+            <input type="file" id="metadatafile" name="metadata" style="visibility: hidden;" />
+        </label>
+        <output id="echo"></output>
+        <script>
+            document.getElementById('metadatafile').addEventListener('change', handleFileSelect, false);
+        </script>
+    </p>
+
+    <p>
+        <h2> Audio:</h2>
+        <a hred="file://null" id="audioTitle"></a>
+        <audio controls="controls" id="player" style="width: 75%;">
+            <source src="file://null" type="audio/mp3" id="playerSource">
+        </audio>
+    </p>
+
+    <p>
+        <h2>Jump to segments</h2>
+        <div id="buttonList"></div>
+    </p>
+</body>
+
+</html>
