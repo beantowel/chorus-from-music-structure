@@ -259,7 +259,7 @@ class DummyDataset(BaseStructDataset):
         wavPath = pathPair.wav
         title = pathPair.title
 
-        gt = (np.array([]), np.array([]))
+        gt = (np.array([], dtype='U16'), np.array([], dtype='U16'))
 
         sample = {'wavPath': wavPath, 'gt': gt, 'title': title}
         if self.transform is not None:

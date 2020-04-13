@@ -102,6 +102,7 @@ class ExtractMel(BaseTransform):
 
     def preprocessor(self, wavPath, sr=SAMPLE_RATE):
         '''<Joint Detection and Classification of Singing Voice Melody Using Convolutional Recurrent Neural Networks>'''
+        wavPath = os.path.abspath(wavPath)
         title = os.path.splitext(os.path.split(wavPath)[-1])[0]
         melPath = os.path.join(
             ALGO_BASE_DIRS['TmpDir'], f'{title}_JDC_out.csv')

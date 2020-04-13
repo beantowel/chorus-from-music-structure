@@ -74,7 +74,7 @@ Options:
 A Quick example is
 
 ```bash
-python predict.py $(pwd)/data/example/starfall.mp3
+python predict.py ./data/example/starfall.mp3
 ```
 
 By default, the algorithm outputs all the chorus sections detected, but you can use the option `--algo single` to force it outputs single chorus section.
