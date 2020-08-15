@@ -64,30 +64,37 @@
     </h1>
 
     <p>
-        <h2>
-            Select audio annotation
-        </h2>
-        <label class='button button1'>
-            Select file
-            <input type="file" id="metadatafile" name="metadata" style="visibility: hidden;" />
-        </label>
-        <output id="echo"></output>
-        <script>
-            document.getElementById('metadatafile').addEventListener('change', handleFileSelect, false);
-        </script>
+    <h2>
+        Select audio annotation
+    </h2>
+    <label class='button button1'>
+        Select file
+        <input type="file" id="metadatafile" name="metadata" style="visibility: hidden;" />
+    </label>
+    <output id="echo"></output>
+    <script>
+        document.getElementById('metadatafile').addEventListener('change', handleFileSelect, false);
+    </script>
     </p>
 
     <p>
-        <h2> Audio:</h2>
-        <a hred="file://null" id="audioTitle"></a>
-        <audio controls="controls" id="player" style="width: 75%;">
-            <source src="file://null" type="audio/mp3" id="playerSource">
-        </audio>
+    <h2> Audio:</h2>
+    <a hred="file://null" id="audioTitle"></a>
+    <audio controls="controls" id="player" style="width: 75%;">
+        <source src="file://null" type="audio/mp3" id="playerSource">
+    </audio>
     </p>
 
     <p>
-        <h2>Jump to segments</h2>
-        <div id="buttonList"></div>
+    <h2>Jump to segments</h2>
+    <div id="buttonList"></div>
+    <h2>Ground truth segments</h2>
+    <div id="gtButtonList"></div>
+    </p>
+
+    <p>
+    <h2>Self-similarity matrix</h2>
+    <img id="ssmFigure" src="" width="70%">
     </p>
 </body>
 

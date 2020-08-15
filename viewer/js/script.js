@@ -28,53 +28,88 @@ function handleFileSelect(evt) {
         player.load();
 
         // clear previous buttons
-        var ele = document.getElementById('buttonList');
-        while (ele.firstChild) {
-            ele.removeChild(ele.firstChild);
-        }
+        cleanButtons('buttonList')
+        cleanButtons('gtButtonList')
 
         // generate jump buttons for items in the annotation
-        obj['annotation'].forEach((item, index, array) => {
-            var label = item['label'];
-            var btn = document.createElement("button");
-            btn.className = buttonClz(label)
-            btn.id = 'button' + index;
-            btn.innerHTML = label;
-            btn.style.width = Math.max(105, 5 * (item['end'] - item['begin'])) + 'px'
+        progressButton(obj['annotation'], "buttonList")
+        if (obj['gt_annotation'] != null) {
+            progressButton(obj['gt_annotation'], "gtButtonList")
+        }
 
-            // progress bar inside button
-            var prg = document.createElement('div');
-            prg.style.width = '100%';
-            prg.style.backgroundColor = '#EDEDED';
-            var btnprogess = document.createElement('div');
-            btnprogess.style.width = '0%';
-            btnprogess.style.height = '2px'
-            btnprogess.style.backgroundColor = 'black';
-            btnprogess.id = 'button progress' + index;
-            btn.appendChild(prg);
-            prg.appendChild(btnprogess);
+        // load image
+        var img = document.getElementById('ssmFigure');
+        img.src = obj['figure']
+    }
 
-            // capture current item
-            btn.onclick = ((item) => {
-                return function (evt) {
-                    // jump to annotation beginning
-                    var begin = item['begin'];
-                    var end = item['end'];
-                    player.currentTime = begin;
-                    player.play();
-                    // stopAt(player, end);
-                }
-            })(item);
-            document.getElementById('buttonList').appendChild(btn);
-        });
+    reader.readAsText(f);
+}
 
-        // dynamically change button color to show position
-        player.addEventListener('timeupdate', (evt) => {
-            obj['annotation'].forEach((item, index, array) => {
+function cleanButtons(id) {
+    var ele = document.getElementById(id)
+    while (ele.firstChild) {
+        ele.removeChild(ele.firstChild)
+    }
+}
+
+function buttonClz(label) {
+    if (label.toLowerCase().startsWith('chorus')) {
+        return 'button button2';
+    } else {
+        return 'button button1';
+    }
+}
+
+var buttonListeners = {}
+function progressButton(annotation, divID) {
+    function getID(clz, index) {
+        return divID + clz + index
+    }
+
+    var player = document.getElementById('player');
+    annotation.forEach((item, index, array) => {
+        var label = item['label'];
+        var btn = document.createElement("button");
+        btn.className = buttonClz(label)
+        btn.id = getID('button', index);
+        btn.innerHTML = label;
+        btn.style.width = Math.max(105, 5 * (item['end'] - item['begin'])) + 'px'
+
+        // progress bar inside button
+        var prg = document.createElement('div');
+        prg.style.width = '100%';
+        prg.style.backgroundColor = '#EDEDED';
+        var btnprogess = document.createElement('div');
+        btnprogess.style.width = '0%';
+        btnprogess.style.height = '2px'
+        btnprogess.style.backgroundColor = 'black';
+        btnprogess.id = getID('progress', index);
+        btn.appendChild(prg);
+        prg.appendChild(btnprogess);
+
+        // capture current item
+        btn.onclick = ((item) => {
+            return function (evt) {
+                // jump to annotation beginning
                 var begin = item['begin'];
                 var end = item['end'];
-                var btn = document.getElementById('button' + index);
-                var prg = document.getElementById('button progress' + index);
+                player.currentTime = begin;
+                player.play();
+                // stopAt(player, end);
+            }
+        })(item);
+        document.getElementById(divID).appendChild(btn);
+    });
+
+    // dynamically change button color to show position
+    // capture annotation
+    listener = ((annotation) => {
+        return function (evt) {
+            annotation.forEach((item, index, array) => {
+                var begin = item['begin'];
+                var end = item['end'];
+                var btn = document.getElementById(getID('button', index));
+                var prg = document.getElementById(getID('progress', index));
                 if (player.currentTime > begin && player.currentTime < end - 1e-4) {
                     btn.className = 'button button3';
                     // show segment progress
@@ -87,29 +122,9 @@ function handleFileSelect(evt) {
                     prg.style.height = '0px'
                 }
             })
-        });
-    }
-
-    reader.readAsText(f);
-}
-
-function buttonClz(label) {
-    if (label.toLowerCase().startsWith('chorus')) {
-        return 'button button2';
-    } else {
-        return 'button button1';
-    }
-}
-
-var listeners = {}
-function stopAt(player, end) {
-    player.removeEventListener('timeupdate', listeners[player.id])
-    function stopOnce(evt) {
-        if (player.currentTime > end) {
-            player.pause();
-            player.removeEventListener('timeupdate', listeners[player.id]);
         }
-    }
-    player.addEventListener('timeupdate', stopOnce);
-    listeners[player.id] = stopOnce;
+    })(annotation);
+    player.removeEventListener('timeupdate', buttonListeners[divID])
+    buttonListeners[divID] = listener
+    player.addEventListener('timeupdate', listener)
 }

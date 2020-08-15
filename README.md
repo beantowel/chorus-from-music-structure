@@ -1,6 +1,10 @@
 # Chorus Detection Using Music Structure Analysis
 
-This repo implements the paper [Chorus Detection Using Music Structure Analysis](https://null). The algorithm detects chorus sections in pop music, and the output follows the [MIREX (*Music Information Retrieval Evaluation eXchange*) Structural Segmentation](https://www.music-ir.org/mirex/wiki/2017:Structural_Segmentation) format. The code also evaluated some other algorithms:
+This repo implements the paper [Chorus Detection Using Music Structure Analysis](https://null). The algorithm detects chorus sections in pop music, and the output follows the [MIREX (*Music Information Retrieval Evaluation eXchange*) Structural Segmentation](https://www.music-ir.org/mirex/wiki/2017:Structural_Segmentation) format. A structure view of the detected choruses can be seen in the figure below, where the green stripes in the upper-left subfigure shows the ground-truth and output chorus sections.
+
+![example on 'Dream Magic'](viewer/screenshot/RWC_32_DREAM_MAGIC.svg)
+
+The code also evaluated some other algorithms:
 
 - [pop-music-highlighter](https://github.com/remyhuang/pop-music-highlighter)
 

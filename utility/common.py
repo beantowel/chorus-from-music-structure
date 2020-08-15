@@ -29,13 +29,10 @@ def cliqueGroups(clique):
     return groups
 
 
-def filteredCliqueEnds(clique, min_size=2, gap=3):
+def filteredCliqueEnds(clique, min_size=1, gap=5):
     groups = cliqueGroups(clique)
-    heads, tails = [], []
-    for group in groups:
-        if len(group) >= min_size:
-            heads.append(group[0])
-            tails.append(group[-1]+1)
+    heads = [group[0] for group in groups if len(group) >= min_size]
+    tails = [group[-1] + 1 for group in groups if len(group) >= min_size]
     if len(heads) > 0:
         hs, ts = [heads[0]], []
         for nxtHead, tail in zip(heads[1:], tails[:-1]):
@@ -54,7 +51,7 @@ def intervalIntersection(intv0, intv1):
     return x
 
 
-def filterIntvs(mirexFmt, fun='chorus'):
+def filterIntvs(mirexFmt, fun="chorus"):
     intvs, labels = mirexFmt
     labels = extractFunctions(labels, [fun])
     intvs = intvs[labels == fun]
@@ -72,32 +69,31 @@ def mergeIntervals(mirexFmt):
             new_intervals.append(interval)
             new_labels.append(label)
     new_intervals = np.array(new_intervals)
-    new_labels = np.array(new_labels, dtype='U16')
+    new_labels = np.array(new_labels, dtype="U16")
     return (new_intervals, new_labels)
 
 
-def extractFunctions(labels: np.ndarray, funs: List[str] = ['chorus']) -> np.ndarray:
+def extractFunctions(labels: np.ndarray, funs: List[str] = ["chorus"]) -> np.ndarray:
     newLabels = []
     for lab in labels:
         preds = list(map(lambda fun: lab.lower().startswith(fun), funs))
         if any(preds):
             newLabels.append(funs[preds.index(True)])
         else:
-            newLabels.append('others')
-    return np.array(newLabels, dtype='U16')
+            newLabels.append("others")
+    return np.array(newLabels, dtype="U16")
 
 
 def matchLabel(est_intvs, gt):
     ref_intvs = filterIntvs(gt)
     gt_est_labels = []
     for onset, offset in est_intvs:
-        intersec = sum([intervalIntersection(intv, (onset, offset))
-                        for intv in ref_intvs])
-        est_dur = (offset - onset)
-        predicate = all([
-            intersec >= est_dur / 2,
-        ])
-        label = 'chorus' if predicate else 'others'
+        intersec = sum(
+            [intervalIntersection(intv, (onset, offset)) for intv in ref_intvs]
+        )
+        est_dur = offset - onset
+        predicate = all([intersec >= est_dur / 2,])
+        label = "chorus" if predicate else "others"
         gt_est_labels.append(label)
     return np.array(gt_est_labels)
 
@@ -107,30 +103,33 @@ def getCliqueLabels(gt, cliques, intervals):
     ref_intvs = filterIntvs(gt)
     cliqueLabels = []
     for clique in cliques:
-        cintvs = [(intervals[group[0]][0], intervals[group[-1]][1])
-                  for group in cliqueGroups(clique)]
-        intersec = np.sum([intervalIntersection(intv, (onset, offset))
-                           for onset, offset in cintvs
-                           for intv in ref_intvs])
-        cdur = sum([(offset - onset)
-                    for onset, offset in cintvs])
-        hit_ref_duration = np.sum([
-            intv[1] - intv[0]
-            for intv in ref_intvs
-            if np.sum([
-                intervalIntersection(intv, cintv)
-                for cintv in cintvs]) > 0
-        ])
+        cintvs = [
+            (intervals[group[0]][0], intervals[group[-1]][1])
+            for group in cliqueGroups(clique)
+        ]
+        intersec = np.sum(
+            [
+                intervalIntersection(intv, (onset, offset))
+                for onset, offset in cintvs
+                for intv in ref_intvs
+            ]
+        )
+        cdur = sum([(offset - onset) for onset, offset in cintvs])
+        hit_ref_duration = np.sum(
+            [
+                intv[1] - intv[0]
+                for intv in ref_intvs
+                if np.sum([intervalIntersection(intv, cintv) for cintv in cintvs]) > 0
+            ]
+        )
         p = intersec / cdur if cdur > 0 else 0
         r = intersec / hit_ref_duration if hit_ref_duration > 0 else 0
-        predicate = all([
-            p >= CC_PRECISION,
-            r >= CC_RECALL,
-            cdur >= MINIMUM_CHORUS_DUR,
-        ])
+        predicate = all(
+            [p >= CC_PRECISION, r >= CC_RECALL, cdur >= MINIMUM_CHORUS_DUR,]
+        )
         # ml = matchLabel(cintvs, gt)
         # predicate = sum(ml == 'chorus') >= len(ml) * 0.5
-        label = 'chorus' if predicate else 'others'
+        label = "chorus" if predicate else "others"
         cliqueLabels.append(label)
     return cliqueLabels
 
@@ -153,10 +152,17 @@ def getLabeledSSM(cliques, size):
         groups = cliqueGroups(clique)
         for xgrp in groups:
             for ygrp in groups:
-                xbegin, xend = boundaries[xgrp[0]], boundaries[xgrp[-1]+1]
-                ybegin, yend = boundaries[ygrp[0]], boundaries[ygrp[-1]+1]
+                xbegin, xend = boundaries[xgrp[0]], boundaries[xgrp[-1] + 1]
+                ybegin, yend = boundaries[ygrp[0]], boundaries[ygrp[-1] + 1]
                 labeledSSM[xbegin:xend, ybegin:yend] = flag + 1
     return labeledSSM
+
+
+def logSSM(ssm):
+    ssm[ssm < 0] = 0
+    ssm += EPSILON
+    ssm = np.log(ssm)
+    return ssm
 
 
 def printMirex(mirexFmt):

@@ -28,27 +28,28 @@ def buildCCDataset(cpath, baseset, getData, force=True):
         X = []
         y = []
         print(
-            f'building clique class Data for <{baseset.__class__.__name__}> @ {cpath}')
+            f"building clique class Data for <{baseset.__class__.__name__}> @ {cpath}"
+        )
         with Pool(NUM_WORKERS) as p:
             N = len(baseset)
             results = list(
                 tqdm(
                     p.imap(
                         starGetCliqueClassData,
-                        zip(
-                            [getData]*N,
-                            [baseset]*N,
-                            range(N))),
-                    total=N))
+                        zip([getData] * N, [baseset] * N, range(N)),
+                    ),
+                    total=N,
+                )
+            )
         for features, clabels in results:
             X.extend([feature for feature in features])
             y.extend([clabel for clabel in clabels])
-        with open(cpath, 'wb') as f:
+        with open(cpath, "wb") as f:
             pickle.dump((X, y), f)
 
 
 def testCCDataset(method):
-    print(f'testCC method:{method}')
+    print(f"testCC method:{method}")
     cpath_train = CHORUS_CLASSIFIER_TRAIN_DATA_FILE[method]
     cpath_val = CHORUS_CLASSIFIER_VAL_DATA_FILE[method]
     _clf = ChorusClassifier(cpath_train)
@@ -56,17 +57,22 @@ def testCCDataset(method):
     clf = _clf.clf
     Xt, yt = _clf.loadData(cpath_val)
     with np.printoptions(precision=3, suppress=True):
-        if hasattr(clf, 'feature_importances_'):
+        if hasattr(clf, "feature_importances_"):
             print(
-                f'importance: {[f"{s}:{x:.3f}" for x, s in zip(clf.feature_importances_, _clf.feature_names)]}')
-        print(f'score:{clf.score(Xt, yt):.3f}')
+                f'importance: {[f"{s}:{x*len(_clf.feature_names):.3f}" for x, s in zip(clf.feature_importances_, _clf.feature_names)]}'
+            )
+        print(f"score:{clf.score(Xt, yt):.3f}")
 
 
 # build Preprocess Dataset for feature extraction
-transforms = [ExtractMel(), GenerateSSM(), ExtractCliques()]
+transforms = [
+    # ExtractMel(),
+    # GenerateSSM(),
+    ExtractCliques(),
+]
 methods = {
-    # 'seqRecur': GetAlgoData(AlgoSeqRecur()),
-    'seqRecurS': GetAlgoData(AlgoSeqRecurSingle()),
+    "seqRecur": GetAlgoData(AlgoSeqRecur()),
+    "seqRecurS": GetAlgoData(AlgoSeqRecurSingle()),
     # 'scluster': GetAlgoData(MsafAlgos('scluster')),
     # 'cnmf': GetAlgoData(MsafAlgos('cnmf')),
     # 'sf': GetAlgoData(MsafAlgosBdryOnly('sf')),
@@ -76,13 +82,12 @@ methods = {
     # 'vmo': GetAlgoData(MsafAlgos('vmo')),
 }
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     for tf in transforms:
-        buildPreprocessDataset(USING_DATASET, tf, force=False)
-    for name, fun in methods.items():
+        buildPreprocessDataset(USING_DATASET, tf, force=True)
+    for name, getDataFun in methods.items():
         cpath_train = CHORUS_CLASSIFIER_TRAIN_DATA_FILE[name]
         cpath_val = CHORUS_CLASSIFIER_VAL_DATA_FILE[name]
-        getData = fun
-        buildCCDataset(cpath_train, CLF_TRAIN_SET, getData)
-        buildCCDataset(cpath_val, CLF_VAL_SET, getData)
+        buildCCDataset(cpath_train, CLF_TRAIN_SET, getDataFun)
+        buildCCDataset(cpath_val, CLF_VAL_SET, getDataFun)
         testCCDataset(name)
