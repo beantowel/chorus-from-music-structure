@@ -7,9 +7,10 @@ Purpose: To implement similarity network fusion approach described in
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import sparse
-import scipy.io as sio
 import time
 import os
+
+from configs.configs import logger
 
 
 def getW(D, K, Mu=0.5):
@@ -34,72 +35,6 @@ def getW(D, K, Mu=0.5):
     Denom[Denom == 0] = 1
     W = np.exp(-(DSym ** 2) / Denom)
     return W
-
-
-def getWCSM(CSMAB, k1, k2, Mu=0.5):
-    """
-    Get a cross similarity matrix from a cross dissimilarity matrix
-    :param CSMAB: Cross-similarity matrix
-    :param k1: Number of neighbors across rows
-    :param k2: Number of neighbors down columns
-    :param Mu: Nearest neighbor hyperparameter
-    :returns W: Exponential weighted similarity matrix
-    """
-    Neighbs1 = np.partition(CSMAB, k2, 1)[:, 0:k2]
-    MeanDist1 = np.mean(Neighbs1, 1)
-
-    Neighbs2 = np.partition(CSMAB, k1, 0)[0:k1, :]
-    MeanDist2 = np.mean(Neighbs2, 0)
-    Eps = MeanDist1[:, None] + MeanDist2[None, :] + CSMAB
-    Eps /= 3
-    return np.exp(-(CSMAB ** 2) / (2 * (Mu * Eps) ** 2))
-
-
-def setupWCSMSSM(WSSMA, WSSMB, WCSMAB):
-    """
-    Get the following kernel cross-similarity matrix
-                [ WSSMA      WCSMAB ]
-                [ WCSMBA^T   WSSMB  ]
-    :param WSSMA: W matrix for upper left SSM part
-    :param WSSMB: W matrix for lower SSM part
-    :param WCSMAB: Cross-similarity part
-    :returns: Matrix with them all together
-    """
-
-    M = WSSMA.shape[0]
-    N = WSSMB.shape[0]
-    W = np.zeros((N + M, N + M))
-    W[0:M, 0:M] = WSSMA
-    W[0:M, M::] = WCSMAB
-    W[M::, 0:M] = WCSMAB.T
-    W[M::, M::] = WSSMB
-    return W
-
-
-def getWCSMSSM(SSMA, SSMB, CSMAB, K, Mu=0.5):
-    """
-    Cross-Affinity Matrix.  Do a special weighting of nearest neighbors
-    so that there are a proportional number of similarity neighbors
-    and cross neighbors
-    :param SSMA: MxM self-similarity matrix for signal A
-    :param SSMB: NxN self-similarity matrix for signal B
-    :param CSMAB: MxN cross-similarity matrix between A and B
-    :param K: Total number of nearest neighbors per row used
-        to tune exponential threshold
-    :param Mu: Hyperparameter for nearest neighbors
-    :return W: Parent W matrix
-    """
-    M = SSMA.shape[0]
-    N = SSMB.shape[0]
-    # Split the neighbors evenly between the CSM
-    # and SSM parts of each row
-    k1 = int(K * float(M) / (M + N))
-    k2 = K - k1
-
-    WSSMA = getW(SSMA, k1, Mu)
-    WSSMB = getW(SSMB, k2, Mu)
-    WCSMAB = getWCSM(CSMAB, k1, k2, Mu)
-    return setupWCSMSSM(WSSMA, WSSMB, WCSMAB)
 
 
 def getP(W, diagRegularize=False):
@@ -150,15 +85,7 @@ def getS(W, K):
 
 
 def doSimilarityFusionWs(
-    Ws,
-    K=5,
-    niters=20,
-    reg_diag=1,
-    reg_neighbs=0.5,
-    do_animation=False,
-    PlotNames=[],
-    PlotExtents=None,
-    verboseTimes=True,
+    Ws, K=5, niters=20, reg_diag=1, reg_neighbs=0.5, verboseTimes=True,
 ):
     """
     Perform similarity fusion between a set of exponentially
@@ -170,7 +97,6 @@ def doSimilarityFusionWs(
         self-similarity promotion
     :param reg_neighbs: Neighbor regularization parameter for promoting
         adjacencies in time
-    :param do_animation: Save an animation of the cross-diffusion process
     :param PlotNames: Strings describing different similarity
         measurements for the animation
     :param PlotExtents: Time labels for images
@@ -186,55 +112,12 @@ def doSimilarityFusionWs(
     Pts = [np.array(P) for P in Ps]
     nextPts = [np.zeros(P.shape) for P in Pts]
     if verboseTimes:
-        print("Time getting Ss and Ps: %g" % (time.time() - tic))
+        logger.debug("Time getting Ss and Ps: %g" % (time.time() - tic))
 
     N = len(Pts)
     AllTimes = []
-    if do_animation:
-        res = 5
-        plt.figure(figsize=(res * N, res * 2))
-        from Laplacian import getUnweightedLaplacianEigsDense
     for it in range(niters):
         ticiter = time.time()
-        if do_animation:
-            for i in range(N):
-                plt.subplot(1, N, i + 1)
-                Im = 1.0 * Pts[i]
-                np.fill_diagonal(Im, 0)
-                if PlotExtents:
-                    plt.imshow(
-                        np.log(5e-2 + Im),
-                        interpolation="none",
-                        cmap="afmhot",
-                        extent=(
-                            PlotExtents[0],
-                            PlotExtents[1],
-                            PlotExtents[1],
-                            PlotExtents[0],
-                        ),
-                    )
-                    plt.xlabel("Time (sec)")
-                    plt.ylabel("Time (sec)")
-                else:
-                    plt.imshow(np.log(5e-2 + Im), interpolation="none", cmap="afmhot")
-                plt.title(PlotNames[i])
-                # Compute Laplacian eigenvectors
-                """
-                NEigs = 20
-                v = getUnweightedLaplacianEigsDense(Pts[i], NEigs)
-                plt.subplot(2, N, N+i+1)
-                if PlotExtents:
-                    plt.imshow(v, cmap = 'afmhot', aspect = 'auto', interpolation = 'none', \
-                        extent=(0, NEigs-1, PlotExtents[1], PlotExtents[0]))
-                    plt.ylabel("Time (Sec)")
-                else:
-                    plt.imshow(v, cmap = 'afmhot', aspect = 'auto', interpolation = 'none')
-                plt.xlim([1, NEigs-1])
-                plt.title("Laplacian Eigenvectors")
-                plt.xlabel("Eigenvector Number")
-                """
-            plt.savefig("SSMFusion%i.png" % it, dpi=300, bbox_inches="tight")
-            plt.clf()
         for i in range(N):
             nextPts[i] *= 0
             tic = time.time()
@@ -260,76 +143,13 @@ def doSimilarityFusionWs(
 
         Pts = nextPts
         if verboseTimes:
-            print(
+            logger.debug(
                 "Elapsed Time Iter %i of %i: %g"
                 % (it + 1, niters, time.time() - ticiter)
             )
     if verboseTimes:
-        print("Total Time multiplying: %g" % np.sum(np.array(AllTimes)))
+        logger.debug("Total Time multiplying: %g" % np.sum(np.array(AllTimes)))
     FusedScores = np.zeros(Pts[0].shape)
     for Pt in Pts:
         FusedScores += Pt
     return FusedScores / N
-
-
-def doSimilarityFusion(
-    Scores,
-    K=5,
-    niters=20,
-    reg_diag=1,
-    reg_neighbs=0.5,
-    do_animation=False,
-    PlotNames=[],
-    PlotExtents=None,
-):
-    """
-    Do similarity fusion on a set of NxN distance matrices.
-    Parameters the same as doSimilarityFusionWs
-    :returns (An array of similarity matrices for each feature, Fused Similarity Matrix)
-    """
-    # Affinity matrices
-    Ws = [getW(D, K) for D in Scores]
-    return (
-        Ws,
-        doSimilarityFusionWs(
-            Ws, K, niters, reg_diag, reg_neighbs, do_animation, PlotNames, PlotExtents
-        ),
-    )
-
-
-# Synthetic example
-if __name__ == "__main__":
-    np.random.seed(100)
-    N = 200
-    D = np.ones((N, N)) + 0.01 * np.random.randn(N, N)
-    D[D < 0] = 0
-    I = np.arange(100)
-    D[I, I] = 0
-
-    I = np.zeros(40, dtype=np.int64)
-    I[0:20] = 15 + np.arange(20)
-    I[20::] = 50 + np.arange(20)
-    J = I + 100
-    D1 = 1.0 * D
-    D1[I, J] = 0
-
-    I2 = np.arange(30, dtype=np.int64) + 20
-    J2 = I2 + 60
-    D2 = 1.0 * D
-    D2[I2, J2] = 0
-
-    plt.subplot(121)
-    plt.imshow(D1)
-    plt.subplot(122)
-    plt.imshow(D2)
-    plt.show()
-
-    doSimilarityFusion(
-        [D1, D2],
-        K=5,
-        niters=20,
-        reg_diag=1,
-        reg_neighbs=0,
-        do_animation=True,
-        PlotNames=["D1", "D2"],
-    )

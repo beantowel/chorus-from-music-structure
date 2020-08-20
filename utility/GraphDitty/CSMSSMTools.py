@@ -23,23 +23,6 @@ def getCSM(X, Y):
     return np.sqrt(C)
 
 
-def getCSMEMD1D(X, Y):
-    """
-    An approximation of all pairs Earth Mover's 1D Distance
-    """
-    M = X.shape[0]
-    N = Y.shape[0]
-    K = X.shape[1]
-    XC = np.cumsum(X, 1)
-    YC = np.cumsum(Y, 1)
-    D = np.zeros((M, N))
-    for k in range(K):
-        xc = XC[:, k]
-        yc = YC[:, k]
-        D += np.abs(xc[:, None] - yc[None, :])
-    return D
-
-
 def getCSMCosine(X, Y):
     XNorm = np.sqrt(np.sum(X ** 2, 1))
     XNorm[XNorm == 0] = 1
@@ -68,47 +51,3 @@ def getShiftInvariantCSM(metricFunc, wins_per_block=20, n_seq=1):
 
     return fun
 
-
-def CSMToBinary(D, Kappa):
-    """
-    Turn a cross-similarity matrix into a binary cross-simlarity matrix
-    If Kappa = 0, take all neighbors
-    If Kappa < 1 it is the fraction of mutual neighbors to consider
-    Otherwise Kappa is the number of mutual neighbors to consider
-    """
-    N = D.shape[0]
-    M = D.shape[1]
-    if Kappa == 0:
-        return np.ones((N, M))
-    elif Kappa < 1:
-        NNeighbs = int(np.round(Kappa * M))
-    else:
-        NNeighbs = Kappa
-    J = np.argpartition(D, NNeighbs, 1)[:, 0:NNeighbs]
-    I = np.tile(np.arange(N)[:, None], (1, NNeighbs))
-    V = np.ones(I.size)
-    [I, J] = [I.flatten(), J.flatten()]
-    ret = sparse.coo_matrix((V, (I, J)), shape=(N, M))
-    return ret.toarray()
-
-
-def CSMToBinaryMutual(D, Kappa):
-    """
-    Take the binary AND between the nearest neighbors in one direction
-    and the other
-    """
-    B1 = CSMToBinary(D, Kappa)
-    B2 = CSMToBinary(D.T, Kappa).T
-    return B1 * B2
-
-
-def CSM2CRPEps(CSM, eps):
-    """
-    Convert a CSM to a cross-recurrence plot with an epsilon threshold
-    :param CSM: MxN cross-similarity matrix
-    :param eps: Cutoff epsilon
-    :returns CRP: MxN cross-recurrence plot
-    """
-    CRP = np.zeros(CSM.shape)
-    CRP[CSM <= eps] = 1
-    return CRP

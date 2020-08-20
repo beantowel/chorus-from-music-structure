@@ -5,7 +5,6 @@ import os
 import pickle
 import numpy as np
 from mir_eval.io import load_time_series
-from scipy.ndimage.interpolation import zoom
 
 from models.selfSimilarity import selfSimilarityMatrix
 from models.seqRecur import cliquesFromSSM

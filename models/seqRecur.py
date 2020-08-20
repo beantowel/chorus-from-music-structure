@@ -1,23 +1,17 @@
+import logging
 import numpy as np
-import networkx as nx
 from copy import copy, deepcopy
-from itertools import product
 from collections import defaultdict
-from queue import Queue
 from scipy.stats import mode
-from scipy.signal import medfilt2d
+from sklearn.cluster import AffinityPropagation
 import matplotlib.pyplot as plt
 
 from utility.common import *
 from configs.modelConfigs import *
-from configs.configs import SHOW
+from configs.configs import DEBUG, logger
 
 
-def selectClique(cliques):
-    lens = [len(c) for c in cliques]
-    groupCounts = [len(filteredCliqueEnds(c, gap=10)[0]) for c in cliques]
-    ind = np.lexsort((lens, groupCounts))
-    return cliques[ind[-1]]
+affinityPropagation = AffinityPropagation()
 
 
 def modefilt(arr, kernel_size):
@@ -47,34 +41,21 @@ def smoothCliques(cliques, size, kernel_size=SMOOTH_KERNEL_SIZE):
     return newCliques
 
 
-def cliquesFromSSM(ssm_f, thresh=SSM_LOG_THRESH, show=SHOW):
-    ssm = ssm_f[1]
-    size = ssm.shape[-1]
-
-    threshSSM = np.zeros_like(ssm, dtype=np.uint8)
-    for i, j in product(range(size), range(size)):
-        threshSSM[i, j] = 1 if ssm[i, j] >= thresh else 0
-
-    g = nx.from_numpy_matrix(threshSSM)
-    gShow = deepcopy(g)
-    cliques = []
-    while g:
-        candidates = list(
-            [c for i, c in zip(range(CLIQUE_CANDIDATES_COUNT), nx.find_cliques(g))]
-        )
-        c = selectClique(candidates)
-
-        g.remove_nodes_from(c)
-        cliques.insert(0, sorted(list(c)))
-        if show:
-            # ebunch = [(x, y) for x in c for y in range(size)]
-            # gShow.remove_edges_from(ebunch)
-            if len(cliques) % 10 == 0:
-                mat = nx.to_numpy_matrix(gShow) * 5
-                mat += getLabeledSSM(cliques, size)
-                plt.imshow(mat)
-                plt.show()
+def cliquesFromSSM(ssm_f, show=DEBUG):
+    ssm = ssm_f[1] - np.max(ssm_f[1])
+    labels = affinityPropagation.fit_predict(ssm)
+    cliques = cliquesFromArr(labels)
     cliques = sorted(cliques, key=lambda c: c[0])
+    if show:
+        size = ssm.shape[0]
+        mat = ssm
+        printArray(ssm, "ssm")
+        lssm = getLabeledSSM(cliques, size)
+        _, axis = plt.subplots(1, 2)
+        axis = axis.flatten()
+        axis[0].imshow(mat)
+        axis[1].imshow(lssm)
+        plt.show()
     return cliques
 
 
@@ -86,12 +67,18 @@ def isAdjacent(cliqueA, cliqueB, dis=ADJACENT_DELTA_DISTANCE, dblock=0):
 
     neighborX = np.sum(deltaX2y <= dis)
     neighborY = np.sum(deltaY2x <= dis)
-    res = all([len(y) - neighborY <= dblock, len(x) - neighborX <= dblock,])
-    # print(f"delta:{delta} res:{res} x,y:{x,y}")
+    res = all(
+        [
+            neighborX > 0,
+            neighborY > 0,
+            len(y) - neighborY <= dblock,
+            len(x) - neighborX <= dblock,
+        ]
+    )
     return res
 
 
-def error(origCliques, mergedCliques, size, times, show=SHOW):
+def error(origCliques, mergedCliques, size, times, show=DEBUG):
     olssm = getLabeledSSM(origCliques, size)
     mlssm = getLabeledSSM(mergedCliques, size)
     olssm[olssm > 0] = 1
@@ -99,10 +86,11 @@ def error(origCliques, mergedCliques, size, times, show=SHOW):
     # false negative + false positive
     fnerr = np.sum((mlssm == 0) & olssm) / (np.sum(olssm) + EPSILON)
     fperr = np.sum(mlssm & (olssm == 0)) / (np.sum(olssm == 0) + EPSILON)
-    fperr = max(0, fperr - 0.2)
-    err = fnerr + fperr
+    err = fnerr + max(0, fperr - FALSE_POSITIVE_ERROR)
     if show:
-        print(f"errs:{fnerr:.5f},{fperr:.5f} sum:{err:.3f} len:{len(mergedCliques)}")
+        logger.debug(
+            f"errs={fnerr:.5f},{fperr:.5f} sum={err:.3f} len={len(mergedCliques)}"
+        )
         x, xm = getLabeledSSM(origCliques, size), getLabeledSSM(mergedCliques, size)
         labels = [x[i, i] for i in range(size)]
         xm[xm > 0] = 10
@@ -113,6 +101,7 @@ def error(origCliques, mergedCliques, size, times, show=SHOW):
 
 
 def mergeAdjacentCliques(cliques, dis=ADJACENT_DELTA_DISTANCE, dblock=0):
+    logger.debug(f"merge cliques, dis={dis} dblock={dblock}")
     size = len(cliques)
     adjMat = np.zeros([size] * 2, dtype=int)
     # calculate adjacency matrix
@@ -149,26 +138,22 @@ def buildRecurrence(cliques, times):
     mergedCliquesList = [
         smoothCliques(mergeAdjacentCliques(cliques, dis=dis, dblock=dblock), size)
         for dis in DELTA_DIS_RANGE
-        for dblock in range(2)
+        for dblock in DELTA_BLOCK_RANGE
     ]
     # mclen = len(mergedCliquesList)
     # for i in range(1):
     #     mergedCliquesList.extend(
-    #         [mergeAdjacentCliques(cs) for cs in mergedCliquesList[-mclen:]]
+    #         [
+    #             smoothCliques(mergeAdjacentCliques(cs), size)
+    #             for cs in mergedCliquesList[-mclen:]
+    #         ]
     #     )
     errors = [error(cliques, ncs, size, times) for ncs in mergedCliquesList]
     indices = np.argsort(errors)
     for i in indices:
         newCliques = mergedCliquesList[i]
-        predicate = all(
-            [
-                len(newCliques) >= MIN_STRUCTURE_COUNT,
-                # len(newCliques) <= MAX_STRUCTURE_COUNT,
-            ]
-        )
+        predicate = all([len(newCliques) >= MIN_STRUCTURE_COUNT,])
         if predicate:
             return newCliques
-    print(
-        f"[WARNING]:seqrecur failed, cliqueLengths={[len(x) for x in mergedCliquesList]}"
-    )
+    logger.warn(f"seqrecur failed, cliqueLengths={[len(x) for x in mergedCliquesList]}")
     return mergedCliquesList[0]

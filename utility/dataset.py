@@ -4,15 +4,14 @@ import pickle
 import librosa
 import time
 import numpy as np
-from queue import deque
 from copy import deepcopy, copy
 from itertools import chain
-from collections import namedtuple, deque
+from collections import namedtuple
 from multiprocessing import Pool
 from tqdm import tqdm
 from mir_eval.io import load_labeled_events, load_labeled_intervals
 
-from configs.configs import DATASET_BASE_DIRS, NUM_WORKERS
+from configs.configs import DATASET_BASE_DIRS, NUM_WORKERS, logger
 
 
 StructDataPathPair = namedtuple("StructDataPathPair", "title wav GT")
@@ -311,7 +310,7 @@ class Preprocess_Dataset:
             os.mkdir(self.ddir)
 
     def build(self, preprocessor, force=False, num_workers=NUM_WORKERS):
-        print(
+        logger.info(
             f"building <{self.__class__.__name__}> from <{self.dataset.__class__.__name__}> with transform identifier=<{self.tid}>"
         )
         self.preprocessor = preprocessor
@@ -336,7 +335,7 @@ class Preprocess_Dataset:
                 feature = pickle.load(f)
             return feature
         except FileNotFoundError as e:
-            print(f'"{pklPath}" not found, build the dataset first.')
+            logger.error(f'file "{pklPath}" not found, build the dataset first.')
             raise e
 
     def getPklPath(self, idx, wavPath=None):

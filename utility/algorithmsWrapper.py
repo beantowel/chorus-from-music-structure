@@ -77,8 +77,6 @@ class AlgoSeqRecurSingle(AlgoSeqRecur):
             chorusIntsec.append(intsec)
         selectIndex = np.argmax(chorusIntsec)
         idx = chorusIndices[selectIndex]
-        # print(
-        #     f'intesec:{chorusIntsec} idx:{idx} chorusIndices:{chorusIndices}')
         begin = intervals[idx][0]
         end = min(dur, begin + chorusDur)
         intervals = np.array([(0, begin), (begin, end), (end, dur),])
@@ -88,13 +86,13 @@ class AlgoSeqRecurSingle(AlgoSeqRecur):
 
 class AlgoSeqRecurBound:
     def __init__(self):
-        pass
+        self.rawAlgo = AlgoSeqRecur()
 
     def __call__(self, dataset, idx):
         ssm_f, _ = getFeatures(dataset, idx)
+        cliques = self.rawAlgo._process(dataset, idx, ssm_f)
+
         boundaries = np.arange(ssm_f[0].shape[0], dtype=int)
-        origCliques = cliquesFromSSM(ssm_f)
-        cliques = buildRecurrence(origCliques, ssm_f[0])
         mirexFmt = matchCliqueLabel(ssm_f[0], boundaries, cliques, dataset, idx)
         return mirexFmt
 
@@ -199,15 +197,6 @@ class MsafAlgosBdryOnly:
                         ssm_f[1][xlower:xhigher, ylower:yhigher] > SSM_LOG_THRESH
                     )
                     blockSSM[i, j] = blockSSM[i, j] / size
-
-        # print(f'thresh:{np.quantile(blockSSM, 0.8)}')
-        # blockCliques = ssmStructure_sr(
-        #     (None, blockSSM), thresh=np.quantile(blockSSM, 0.5))
-        # labels = np.zeros(len(tIntvs), dtype=int)
-        # for i, clique in enumerate(blockCliques):
-        #     for idx in clique:
-        #         labels[idx] = i
-
         labels = np.arange(len(tIntvs), dtype=int)
         for i in range(len(labels)):
             score = [blockSSM[i, j] for j in chain(range(i), range(i + 1, len(labels)))]

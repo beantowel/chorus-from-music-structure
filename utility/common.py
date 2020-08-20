@@ -1,6 +1,8 @@
 import numpy as np
 from typing import List
+import matplotlib.pyplot as plt
 
+from configs.configs import DEBUG, logger
 from configs.modelConfigs import *
 from collections import defaultdict
 
@@ -158,14 +160,27 @@ def getLabeledSSM(cliques, size):
     return labeledSSM
 
 
-def logSSM(ssm):
+def logSSM(ssm, inplace=True):
+    if not inplace:
+        ssm = ssm.copy()
     ssm[ssm < 0] = 0
     ssm += EPSILON
     ssm = np.log(ssm)
     return ssm
 
 
-def printMirex(mirexFmt):
-    intervals, labels = mirexFmt
-    x = np.concatenate([intervals, np.expand_dims(labels, 1)], axis=1)
-    return x
+def expSSM(ssm, inplace=True):
+    if not inplace:
+        ssm = ssm.copy()
+    ssm = np.exp(ssm)
+    ssm -= EPSILON
+    ssm[ssm < 0] = 0
+    return ssm
+
+
+def printArray(arr, name, show=False):
+    logger.debug(f"{name}{arr.shape}, min={np.min(arr)} max={np.max(arr)}")
+    if show:
+        plt.imshow(logSSM(arr), aspect="auto")
+        plt.colorbar()
+        plt.show()

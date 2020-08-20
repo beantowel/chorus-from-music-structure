@@ -1,4 +1,5 @@
 import os
+import logging
 
 SA_HOME = os.environ["HOME"] + "/FDU/MIR"
 # dependency location and location to store temporary files running the dependencies
@@ -62,4 +63,13 @@ PLOT_METRIC_FIELDS = [
 # ]
 DETECTION_WINDOW = 3
 
-SHOW = True if os.getenv("TEST_SHOW") is not None else False
+DEBUG = True if os.getenv("DEBUG") is not None else False
+
+# logging settings
+logger = logging.getLogger("chorus_detector")
+logger.setLevel(logging.DEBUG)
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG) if DEBUG else ch.setLevel(logging.INFO)
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+ch.setFormatter(formatter)
+logger.addHandler(ch)

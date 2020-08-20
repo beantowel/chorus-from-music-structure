@@ -1,6 +1,5 @@
 import os
 import pickle
-import warnings
 import numpy as np
 import pandas as pd
 from copy import deepcopy
@@ -17,6 +16,7 @@ from configs.configs import (
     PLOT_METRIC_FIELDS,
     DETECTION_WINDOW,
     NUM_WORKERS,
+    logger,
 )
 
 
@@ -29,7 +29,6 @@ class AlgoEvaluator:
     def eval(self, idx):
         est = self.algo(self.dataset, idx)
         sample = self.dataset[idx]
-        # print(f'title[{idx}]:{sample["title"]}')
         gt = sample["gt"]
         metric = getMetric(gt, est)
         return metric
@@ -42,7 +41,7 @@ class AlgoEvaluator:
         except RuntimeError as e:
             # CUDA RuntimeError
             metrics = [self.eval(i) for i in tqdm(range(N))]
-            print("[RuntimeError]", e)
+            logger.error(f"[RuntimeError] ", e)
         titles = [sample["title"] for sample in self.dataset]
         return np.array(metrics), titles
 
@@ -140,7 +139,7 @@ class Metrics_Saver:
                 self.metricsList.pop(idx)
                 self.titlesList.pop(idx)
         except ValueError:
-            print(f"all {algoName} result removed")
+            logger.info(f"all {algoName} result removed")
 
     def reWriteResult(self, algoName, metrics, titles):
         assert algoName in self.algoNames, f"{algoName} not in {self.algoNames}"
@@ -157,7 +156,7 @@ class Metrics_Saver:
             res = [metrics[_titles.index(title)] for title in titles]
             return np.array(res), titles
         except ValueError:
-            print(f"{algoName} results not found in {self.datasetName}")
+            logger.warn(f"{algoName} results not found in {self.datasetName}")
 
     def writeFullResults(self, dirname):
         fullOutputFile = os.path.join(dirname, f"{self.datasetName}_full.csv")
@@ -173,7 +172,7 @@ class Metrics_Saver:
             algoDf = pd.concat([headDf, metricDf], axis=1)
             df = pd.concat([df, algoDf], ignore_index=True)
         df.to_csv(fullOutputFile)
-        print(f"results written to {fullOutputFile}")
+        logger.info(f"results written to '{fullOutputFile}'")
 
     def writeAveResults(self, dirname):
         aveOutputFile = os.path.join(dirname, f"{self.datasetName}.csv")
@@ -183,7 +182,7 @@ class Metrics_Saver:
             data = np.hstack([algoName, np.mean(metrics, axis=0)]).reshape(1, -1)
             df = pd.concat([df, pd.DataFrame(data=data, columns=columns)])
         df.to_csv(aveOutputFile)
-        print(f"results written to {aveOutputFile}")
+        logger.info(f"results written to '{aveOutputFile}'")
 
     def saveViolinPlot(self, dirname, plotMetric=PLOT_METRIC_FIELDS, order=None):
         matplotlib.use("Agg")
@@ -204,7 +203,7 @@ class Metrics_Saver:
         metricsList = metricsList[:, :, metricsFieldSelector]
 
         pos = np.arange(len(algoNames), dtype=int) + 1
-        fig, axes = plt.subplots(
+        _, axes = plt.subplots(
             nrows=rows, ncols=cols, figsize=(cols * 4 * len(algoNames) / 10, rows * 4)
         )
         for i, axis in enumerate(axes.flatten()):
@@ -218,7 +217,7 @@ class Metrics_Saver:
         plt.tight_layout()
         plt.subplots_adjust(top=0.9)
         plt.savefig(pltOutputFile, quality=100)
-        print(f"violin plot written to {pltOutputFile}")
+        logger.info(f"violin plot written to '{pltOutputFile}'")
 
     def dump(self, dirname):
         dumpFile = os.path.join(dirname, f"{self.datasetName}.pkl")
@@ -228,7 +227,7 @@ class Metrics_Saver:
                 f,
                 pickle.HIGHEST_PROTOCOL,
             )
-        print(f"saver object written to {dumpFile}")
+        logger.info(f"saver object written to '{dumpFile}'")
         return self
 
     def load(self, dirname):
@@ -239,10 +238,8 @@ class Metrics_Saver:
                     f
                 )
                 if dname != self.datasetName:
-                    print(
-                        f"[WARNING]:old name:<{dname}> != new name:<{self.datasetName}>"
-                    )
-            print(f"saver object loaded from {dumpFile}")
+                    logger.warn(f"old name:<{dname}> != new name:<{self.datasetName}>")
+            logger.info(f"saver object loaded from '{dumpFile}'")
         except FileNotFoundError:
-            print(f"saver object {dumpFile} not found, set to empty")
+            logger.warn(f"saver object file '{dumpFile}' not found, set to empty")
         return self

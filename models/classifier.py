@@ -1,13 +1,12 @@
 import librosa
 import pickle
 import numpy as np
-from scipy import signal
-from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
-from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier
 
 from models.seqRecur import *
 from utility.common import *
 from utility.transform import *
+from configs.configs import logger
 from configs.modelConfigs import *
 
 
@@ -163,7 +162,7 @@ class ChorusClassifier:
         probs = self.clf.predict_proba(features)[:, clzIdx]
         if np.max(probs) < 0.5:
             # default action: select clique with maximal prob
-            print(f"[WARNING]: chorus detection failed, prob:{np.max(probs)}")
+            logger.warning(f"chorus detection failed, maxProb={np.max(probs)}")
             cindices = np.where(probs >= np.max(probs) - 0.05)[0]
         else:
             cindices = np.where(probs >= 0.5)[0]
@@ -175,10 +174,10 @@ class ChorusClassifier:
         if os.path.exists(dataFile):
             with open(dataFile, "rb") as f:
                 X, y = pickle.load(f)
-                print(f"<{self.__class__.__name__}> load data from: {dataFile}")
-                print(f'chorus/total: {sum(np.array(y)=="chorus")}/{len(y)}')
+                logger.info(f"<{self.__class__.__name__}> load data from '{dataFile}'")
+                logger.info(f'chorus/total={sum(np.array(y)=="chorus")}/{len(y)}')
         else:
-            print(f"build dataset for classifier first")
+            logger.error(f"build dataset for classifier first")
             raise FileNotFoundError(dataFile)
         return X, y
 

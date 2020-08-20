@@ -1,32 +1,24 @@
 import librosa
 import scipy
 import numpy as np
-import matplotlib.pyplot as plt
 from copy import deepcopy
 
 from utility.GraphDitty.CSMSSMTools import getCSM, getCSMCosine, getShiftInvariantCSM
 from utility.GraphDitty.SimilarityFusion import doSimilarityFusionWs, getW
-from utility.common import logSSM
+from utility.common import logSSM, printArray
 from configs.modelConfigs import *
-from configs.configs import SHOW
+from configs.configs import logger
 
 
 def selfSimilarityMatrix(
-    wavfile,
-    mel=None,
-    win_fac=10,
-    wins_per_block=20,
-    K=5,
-    sr=22050,
-    hop_length=512,
-    show=SHOW,
+    wavfile, mel=None, win_fac=10, wins_per_block=20, K=5, sr=22050, hop_length=512,
 ):
-    print(f"loading:{wavfile}")
+    logger.debug(f"loading:{wavfile}")
     y, sr = librosa.load(wavfile, sr=sr)
     nHops = (y.size - hop_length * (win_fac - 1)) / hop_length
     intervals = np.arange(0, nHops + 1e-6, win_fac).astype(int)
-    print(
-        f"{nHops}=({y.size} - {hop_length}*({win_fac}-1))/{hop_length} intvs:{intervals[-1]}"
+    logger.debug(
+        f"nHops={nHops}=(size-hop_length*(win_fac-1))/hop_length=({y.size} - {hop_length}*({win_fac}-1))/{hop_length} intvs={intervals[-1]}"
     )
     # chorma
     chroma = librosa.feature.chroma_cqt(
@@ -53,8 +45,8 @@ def selfSimilarityMatrix(
     intervals = librosa.util.fix_frames(intervals, x_min=0, x_max=n_frames)
     times = intervals * float(hop_length) / float(sr)
     size = n_frames // win_fac
-    print(
-        f"fixed intervals:{intervals[-1]} hop:{intervals[1]-intervals[0]} size:{size}"
+    logger.debug(
+        f"frames fixed, intervals={intervals[-1]} hop={intervals[1]-intervals[0]} size={size}"
     )
     WMfcc = feature2W(mfcc, size, np.mean, getCSM, wins_per_block=wins_per_block)
     WChroma = feature2W(
@@ -65,9 +57,9 @@ def selfSimilarityMatrix(
         wins_per_block=wins_per_block,
     )
     # WTempo = feature2W(tempogram, size, np.mean, getCSM, wins_per_block=wins_per_block)
-    printArray(WMfcc, "mfcc", show=show)
-    printArray(WChroma, "chorma", show=show)
-    # printArray(WTempo, "tempo", show=show)
+    printArray(WMfcc, "mfcc")
+    printArray(WChroma, "chorma")
+    # printArray(WTempo, "tempo")
 
     # melody
     if mel is not None:
@@ -81,7 +73,7 @@ def selfSimilarityMatrix(
             getShiftInvariantCSM(getCSM, wins_per_block, n_seq=n_seq),
             wins_per_block=wins_per_block,
         )
-        printArray(WPitches, "pitchChroma", show=show)
+        printArray(WPitches, "pitchChroma")
         Ws = [WMfcc, WChroma, WPitches]  # , WTempo]
     else:
         Ws = [WMfcc, WChroma]  # , WTempo]
@@ -90,6 +82,7 @@ def selfSimilarityMatrix(
         df = librosa.segment.timelag_filter(scipy.ndimage.median_filter)
         Ws = [df(W, size=(1, REC_SMOOTH)) for W in Ws]
     W = doSimilarityFusionWs(Ws, K=K, niters=3, reg_diag=1.0, reg_neighbs=0.5)
+    printArray(W, "fused W")
     res = {
         "Ws": {"Fused": W, "Melody": WPitches if mel is not None else None,},
         "times": times,
@@ -148,13 +141,8 @@ def feature2W(feature, size, aggregator, simFunction, wins_per_block=20, K=5):
     # Wfeature[<interval number>, <interval number>]
     Wfeature = getW(Dfeature, K)
     assert not np.isnan(np.sum(Wfeature)), f"invalid affinity, Dfeature={Dfeature}"
-    print(f"feature{feature.shape} Xfeature{Xfeature.shape} Wfeature{Wfeature.shape}")
+    logger.debug(
+        f"shapes, feature{feature.shape} Xfeature{Xfeature.shape} Wfeature{Wfeature.shape}"
+    )
     return Wfeature
 
-
-def printArray(arr, name, show=SHOW):
-    print(f"{name}{arr.shape}:{np.min(arr)}~{np.max(arr)}")
-    if show:
-        plt.imshow(logSSM(arr), aspect="auto")
-        plt.colorbar()
-        plt.show()
