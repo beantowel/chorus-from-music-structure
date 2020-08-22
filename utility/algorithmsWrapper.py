@@ -52,7 +52,6 @@ class AlgoSeqRecur:
 class AlgoSeqRecurSingle(AlgoSeqRecur):
     def __init__(self):
         super(AlgoSeqRecurSingle, self).__init__()
-        self.clf = ChorusClassifier(CHORUS_CLASSIFIER_TRAIN_DATA_FILE["seqRecurS"])
 
     def __call__(self, dataset, idx):
         mirexFmt = super(AlgoSeqRecurSingle, self).__call__(dataset, idx)
@@ -64,7 +63,9 @@ class AlgoSeqRecurSingle(AlgoSeqRecur):
         chorusIndices = np.nonzero(np.char.startswith(labels, "chorus"))[0]
         dur = intervals[-1][1]
 
-        chorusIntsec = []
+        chorusIntsec = (
+            []
+        )  # select interval with max intersection (begin, end) - (begin, begin + 30s)
         for idx in chorusIndices:
             begin = intervals[idx][0]
             end = min(dur, begin + chorusDur)
@@ -200,9 +201,9 @@ class MsafAlgosBdryOnly:
         labels = np.arange(len(tIntvs), dtype=int)
         for i in range(len(labels)):
             score = [blockSSM[i, j] for j in chain(range(i), range(i + 1, len(labels)))]
-            pidx = np.argmax(score)
-            if pidx < i:
-                labels[i] = pidx
+            labelIdx = np.argmax(score)
+            if labelIdx < i:
+                labels[i] = labelIdx
 
         arr = np.zeros(len(times) - 1, dtype=int)
         for tIntv, label in zip(tIntvs, labels):
@@ -216,7 +217,7 @@ class MsafAlgosBdryOnly:
 
 class GroudTruthStructure:
     def __init__(self):
-        self.clf = ChorusClassifier(CHORUS_CLASSIFIER_TRAIN_DATA_FILE["gt"])
+        self.clf = ChorusClassifier(CHORUS_CLASSIFIER_TRAIN_DATA_FILE["gtBoundary"])
 
     def getStructure(self, dataset, idx):
         tf = GenerateSSM()

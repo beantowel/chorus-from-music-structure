@@ -27,7 +27,7 @@ SSM_TIME_STEP = 1 / SAMPLE_RATE * 512 * 10  # GraphDitty hop=512, win_fac=10
 SSM_FEATURES = {11: ["Fused"], 12: ["Fused"], 13: ["Melody"],}[SSM_TRANSFORM_IDENTIFIER]
 
 # sequence recurrence algorithm
-SSM_LOG_THRESH = -4
+SSM_LOG_THRESH = -4.5
 
 ADJACENT_DELTA_DISTANCE = 10
 DELTA_DIS_RANGE = [5, 10, 20]
@@ -50,15 +50,12 @@ CLF_SPLIT_RATIO = 0.8
 CLF_TRAIN_SET, CLF_VAL_SET = USING_DATASET.randomSplit(CLF_SPLIT_RATIO, seed=114514)
 CHORUS_CLASSIFIER_TRAIN_DATA_FILE = {
     "seqRecur": f"data/models/{USING_DATASET.__class__.__name__}_tf{SSM_TRANSFORM_IDENTIFIER}_seqRecur_TRAIN.pkl",
-    "seqRecurS": f"data/models/{USING_DATASET.__class__.__name__}_tf{SSM_TRANSFORM_IDENTIFIER}_seqRecurS_TRAIN.pkl",
-    # 'vmo': f'data/models/{USING_DATASET.__class__.__name__}_vmo_TRAIN.pkl',
     "scluster": f"data/models/{USING_DATASET.__class__.__name__}_scluster_TRAIN.pkl",
-    # 'fmc2d': f'data/models/{USING_DATASET.__class__.__name__}_fmc2d_TRAIN.pkl',
     "cnmf": f"data/models/{USING_DATASET.__class__.__name__}_cnmf_TRAIN.pkl",
     "sf": f"data/models/{USING_DATASET.__class__.__name__}_sf_TRAIN.pkl",
     "olda": f"data/models/{USING_DATASET.__class__.__name__}_olda_TRAIN.pkl",
     "foote": f"data/models/{USING_DATASET.__class__.__name__}_foote_TRAIN.pkl",
-    "gt": f"data/models/{USING_DATASET.__class__.__name__}_gt_TRAIN.pkl",
+    "gtBoundary": f"data/models/{USING_DATASET.__class__.__name__}_gtBoundary_TRAIN.pkl",
 }
 CHORUS_CLASSIFIER_VAL_DATA_FILE = {
     key: val.replace("TRAIN.pkl", "VAL.pkl")

@@ -147,7 +147,7 @@ class ChorusClassifier:
         self.feature_names.extend([f"nxt_{s}" for s in self.feature_names[:flen]])
 
     def train(self):
-        clf = RandomForestClassifier(n_estimators=100, random_state=42)
+        clf = RandomForestClassifier(n_estimators=1000, random_state=42)
         # clf = AdaBoostClassifier(random_state=42)
         X, y = self.loadData(self.dataFile)
         clf.fit(X, y)

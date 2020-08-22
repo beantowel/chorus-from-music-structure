@@ -28,9 +28,7 @@ algos = {
     "cnmf": MsafAlgos("cnmf"),
     "cnmf+": MsafAlgosBound("cnmf"),
     "foote+": MsafAlgosBound("foote"),
-    "gt": GroudTruthStructure(),
-    # 'vmo+': MsafAlgosBound('vmo'),
-    # 'vmo': MsafAlgos('vmo'),
+    "gtBoundary": GroudTruthStructure(),
 }
 algo_order = [
     "seqRecur",
@@ -42,7 +40,15 @@ algo_order = [
     "cnmf",
     "foote",
 ]
-algo_order += ["seqRecur+", "olda+", "scluster+", "sf+", "cnmf+", "foote+", "gt"]
+algo_order += [
+    "seqRecur+",
+    "olda+",
+    "scluster+",
+    "sf+",
+    "cnmf+",
+    "foote+",
+    "gtBoundary",
+]
 loader_views = {
     "_VAL": CLF_VAL_SET,
     "_TRAIN": CLF_TRAIN_SET,

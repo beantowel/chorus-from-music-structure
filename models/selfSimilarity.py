@@ -56,10 +56,10 @@ def selfSimilarityMatrix(
         getShiftInvariantCSM(getCSMCosine, wins_per_block=wins_per_block),
         wins_per_block=wins_per_block,
     )
-    # WTempo = feature2W(tempogram, size, np.mean, getCSM, wins_per_block=wins_per_block)
+    WTempo = feature2W(tempogram, size, np.mean, getCSM, wins_per_block=wins_per_block)
     printArray(WMfcc, "mfcc")
     printArray(WChroma, "chorma")
-    # printArray(WTempo, "tempo")
+    printArray(WTempo, "tempo")
 
     # melody
     if mel is not None:
@@ -74,9 +74,9 @@ def selfSimilarityMatrix(
             wins_per_block=wins_per_block,
         )
         printArray(WPitches, "pitchChroma")
-        Ws = [WMfcc, WChroma, WPitches]  # , WTempo]
+        Ws = [WMfcc, WChroma, WPitches, WTempo]
     else:
-        Ws = [WMfcc, WChroma]  # , WTempo]
+        Ws = [WMfcc, WChroma, WTempo]
 
     if REC_SMOOTH > 0:
         df = librosa.segment.timelag_filter(scipy.ndimage.median_filter)
