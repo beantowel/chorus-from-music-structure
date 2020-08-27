@@ -72,12 +72,12 @@ transforms = [
 ]
 methods = {
     "seqRecur": GetAlgoData(AlgoSeqRecur()),
-    "scluster": GetAlgoData(MsafAlgos("scluster")),
-    "cnmf": GetAlgoData(MsafAlgos("cnmf")),
-    "sf": GetAlgoData(MsafAlgosBdryOnly("sf")),
-    "olda": GetAlgoData(MsafAlgosBdryOnly("olda")),
-    "foote": GetAlgoData(MsafAlgosBdryOnly("foote")),
-    "gtBoundary": GetAlgoData(GroudTruthStructure()),
+    # "scluster": GetAlgoData(MsafAlgos("scluster")),
+    # "cnmf": GetAlgoData(MsafAlgos("cnmf")),
+    # "sf": GetAlgoData(MsafAlgosBdryOnly("sf")),
+    # "olda": GetAlgoData(MsafAlgosBdryOnly("olda")),
+    # "foote": GetAlgoData(MsafAlgosBdryOnly("foote")),
+    # "gtBoundary": GetAlgoData(GroudTruthStructure()),
 }
 
 if __name__ == "__main__":

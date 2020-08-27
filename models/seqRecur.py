@@ -3,6 +3,7 @@ import numpy as np
 from copy import copy, deepcopy
 from collections import defaultdict
 from scipy.stats import mode
+from scipy.sparse.csgraph import floyd_warshall
 from sklearn.cluster import AffinityPropagation
 import matplotlib.pyplot as plt
 
@@ -41,7 +42,7 @@ def smoothCliques(cliques, size, kernel_size=SMOOTH_KERNEL_SIZE):
     return newCliques
 
 
-def cliquesFromSSM(ssm_f, show=DEBUG):
+def cliquesFromSSM(ssm_f, show=False):
     ssm = ssm_f[1] - np.max(ssm_f[1])
     labels = affinityPropagation.fit_predict(ssm)
     cliques = cliquesFromArr(labels)
@@ -78,7 +79,7 @@ def isAdjacent(cliqueA, cliqueB, dis=ADJACENT_DELTA_DISTANCE, dblock=0):
     return res
 
 
-def error(origCliques, mergedCliques, size, times, show=DEBUG):
+def error(origCliques, mergedCliques, size, times, show=False):
     olssm = getLabeledSSM(origCliques, size)
     mlssm = getLabeledSSM(mergedCliques, size)
     olssm[olssm > 0] = 1
@@ -87,10 +88,8 @@ def error(origCliques, mergedCliques, size, times, show=DEBUG):
     fnerr = np.sum((mlssm == 0) & olssm) / (np.sum(olssm) + EPSILON)
     fperr = np.sum(mlssm & (olssm == 0)) / (np.sum(olssm == 0) + EPSILON)
     err = fnerr + max(0, fperr - FALSE_POSITIVE_ERROR)
+    logger.debug(f"errs={fnerr:.5f},{fperr:.5f} sum={err:.3f} len={len(mergedCliques)}")
     if show:
-        logger.debug(
-            f"errs={fnerr:.5f},{fperr:.5f} sum={err:.3f} len={len(mergedCliques)}"
-        )
         x, xm = getLabeledSSM(origCliques, size), getLabeledSSM(mergedCliques, size)
         labels = [x[i, i] for i in range(size)]
         xm[xm > 0] = 10
@@ -100,45 +99,55 @@ def error(origCliques, mergedCliques, size, times, show=DEBUG):
     return err
 
 
+def mergeFind(adjLists, size):
+    def getLabel(j):
+        if labels[j] == j:
+            return j
+        else:
+            labels[j] = getLabel(labels[j])
+            return labels[j]
+
+    labels = np.arange(size)
+    for i in range(size):
+        for j in adjLists[i]:
+            labels[i] = getLabel(j)
+    for i in range(size):
+        labels[i] = getLabel(i)
+    return labels
+
+
 def mergeAdjacentCliques(cliques, dis=ADJACENT_DELTA_DISTANCE, dblock=0):
     logger.debug(f"merge cliques, dis={dis} dblock={dblock}")
     size = len(cliques)
-    adjMat = np.zeros([size] * 2, dtype=int)
+    adjLists = [[] for i in range(size)]  # i < j: adjLists[j] = [..., i, ...]
     # calculate adjacency matrix
     for i in range(size):
-        adjMat[i, i] = 1
         for j in range(i + 1, size):
-            res = isAdjacent(cliques[i], cliques[j], dis=dis, dblock=dblock)
-            adjMat[i, j] = res
-            adjMat[j, i] = res
-    # generate transitive closure
-    for k in range(size):
-        for i in range(size):
-            for j in range(size):
-                if adjMat[i, k] and adjMat[k, j]:
-                    adjMat[i, j] = 1
-    # merge cliques
+            if isAdjacent(cliques[i], cliques[j], dis=dis, dblock=dblock):
+                adjLists[j].append(i)
+    # merge cliques in transitive closure
     # key:smallest clique label in connected component
     # value:frame number list
     cliquesDic = defaultdict(list)
+    labels = mergeFind(adjLists, size)
     for i in range(size):
-        for j in range(size):
-            if adjMat[i, j]:
-                cliquesDic[j].extend(cliques[i])
-                cliquesDic[j] = sorted(cliquesDic[j])
-                break
+        cliquesDic[labels[i]].extend(cliques[i])
+
     newCliques = list(cliquesDic.values())
     newCliques = sorted(newCliques, key=lambda c: c[0])
     return newCliques
 
 
 def buildRecurrence(cliques, times):
+    logger.debug(f"build recurrence")
     cliques = deepcopy(cliques)
     size = len(times) - 1
     mergedCliquesList = [
-        smoothCliques(mergeAdjacentCliques(cliques, dis=dis, dblock=dblock), size)
+        smoothCliques(
+            mergeAdjacentCliques(cliques, dis=dis), size, kernel_size=kernelSize
+        )
         for dis in DELTA_DIS_RANGE
-        for dblock in DELTA_BLOCK_RANGE
+        for kernelSize in SMOOTH_KERNEL_SIZE_RANGE
     ]
     # mclen = len(mergedCliquesList)
     # for i in range(1):

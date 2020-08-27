@@ -32,9 +32,9 @@ function handleFileSelect(evt) {
         cleanButtons('gtButtonList')
 
         // generate jump buttons for items in the annotation
-        progressButton(obj['annotation'], "buttonList")
+        genProgressButton(obj['annotation'], "buttonList")
         if (obj['gt_annotation'] != null) {
-            progressButton(obj['gt_annotation'], "gtButtonList")
+            genProgressButton(obj['gt_annotation'], "gtButtonList")
         }
 
         // load image
@@ -61,7 +61,7 @@ function buttonClz(label) {
 }
 
 var buttonListeners = {}
-function progressButton(annotation, divID) {
+function genProgressButton(annotation, divID) {
     function getID(clz, index) {
         return divID + clz + index
     }
@@ -127,4 +127,9 @@ function progressButton(annotation, divID) {
     player.removeEventListener('timeupdate', buttonListeners[divID])
     buttonListeners[divID] = listener
     player.addEventListener('timeupdate', listener)
+}
+
+function changeAudioTime(t) {
+    var player = document.getElementById('player');
+    player.currentTime += t;
 }

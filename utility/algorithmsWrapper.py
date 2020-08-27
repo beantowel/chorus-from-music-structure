@@ -6,6 +6,7 @@ from mir_eval.io import load_labeled_intervals
 
 from models.classifier import *
 from models.seqRecur import *
+from models.pickSingle import *
 from utility.dataset import *
 from utility.common import *
 from configs.modelConfigs import *
@@ -55,34 +56,9 @@ class AlgoSeqRecurSingle(AlgoSeqRecur):
 
     def __call__(self, dataset, idx):
         mirexFmt = super(AlgoSeqRecurSingle, self).__call__(dataset, idx)
-        mirexFmt = self.getSingleChorusSection(mirexFmt)
-        return mirexFmt
-
-    def getSingleChorusSection(self, mirexFmt, chorusDur=30):
-        intervals, labels = mergeIntervals(mirexFmt)
-        chorusIndices = np.nonzero(np.char.startswith(labels, "chorus"))[0]
-        dur = intervals[-1][1]
-
-        chorusIntsec = (
-            []
-        )  # select interval with max intersection (begin, end) - (begin, begin + 30s)
-        for idx in chorusIndices:
-            begin = intervals[idx][0]
-            end = min(dur, begin + chorusDur)
-            intsec = np.sum(
-                [
-                    intervalIntersection((begin, end), intervals[j])
-                    for j in chorusIndices
-                ]
-            )
-            chorusIntsec.append(intsec)
-        selectIndex = np.argmax(chorusIntsec)
-        idx = chorusIndices[selectIndex]
-        begin = intervals[idx][0]
-        end = min(dur, begin + chorusDur)
-        intervals = np.array([(0, begin), (begin, end), (end, dur),])
-        labels = np.array(["others", "chorus", "others",], dtype="U16")
-        return (intervals, labels)
+        _, mels_f = getFeatures(dataset, idx)
+        mirexFmtSingle = maxArousal(mirexFmt, mels_f)
+        return mirexFmtSingle
 
 
 class AlgoSeqRecurBound:

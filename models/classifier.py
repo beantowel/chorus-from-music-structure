@@ -3,11 +3,23 @@ import pickle
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 
-from models.seqRecur import *
+from models.pickSingle import arousalScore
 from utility.common import *
 from utility.transform import *
 from configs.configs import logger
 from configs.modelConfigs import *
+
+
+def numberCliques(cliques, labels):
+    # numbering cliques (recurrence label)
+    typeCount = {}
+    for clique in sorted(cliques, key=lambda c: c[0]):
+        ltype = labels[clique[0]]
+        count = typeCount.get(ltype, 0)
+        for idx in clique:
+            labels[idx] += f" {chr(65+count)}"
+        typeCount[ltype] = count + 1
+    return labels
 
 
 def chorusDetection(cliques, ssm_times, mels_f, clf):
@@ -27,18 +39,6 @@ def chorusDetection(cliques, ssm_times, mels_f, clf):
     # merge the output using `mergeIntervals` for segment based usage
     mirexFmt = (intervals, labels)
     return mirexFmt
-
-
-def numberCliques(cliques, labels):
-    # numbering cliques (recurrence label)
-    typeCount = {}
-    for clique in sorted(cliques, key=lambda c: c[0]):
-        ltype = labels[clique[0]]
-        count = typeCount.get(ltype, 0)
-        for idx in clique:
-            labels[idx] += f" {chr(65+count)}"
-        typeCount[ltype] = count + 1
-    return labels
 
 
 def sliceTimeSeries(times, values, tIntvs):
@@ -87,8 +87,21 @@ def getCliqueFeatures(cliques, boundaries, ssm_times, mels_f):
         heads = cliqueHeads(clique)
         head = time(heads[0]) / dur
         headx = time(heads[-1]) / dur
+        arousal = np.mean(
+            [arousalScore(time(head), mels_f[0], mels_f[1], win=5) for head in heads]
+        )
 
-        feature = cdur, voicingRate, melMedian, melMin, melMax, head, headx, count
+        feature = (
+            cdur,
+            voicingRate,
+            melMedian,
+            melMin,
+            melMax,
+            head,
+            headx,
+            count,
+            arousal,
+        )
         return feature
 
     def getRelativeFeature(features):
@@ -139,6 +152,7 @@ class ChorusClassifier:
             "head",
             "headx",
             "count",
+            "arousal",
         ]
         flen = len(self.feature_names)
         self.feature_names.extend([f"rnk_{s}" for s in self.feature_names[:flen]])
@@ -147,7 +161,9 @@ class ChorusClassifier:
         self.feature_names.extend([f"nxt_{s}" for s in self.feature_names[:flen]])
 
     def train(self):
-        clf = RandomForestClassifier(n_estimators=1000, random_state=42)
+        clf = RandomForestClassifier(
+            n_estimators=RD_FOREST_ESTIMATORS, random_state=RD_FOREST_RANDOM_STATE
+        )
         # clf = AdaBoostClassifier(random_state=42)
         X, y = self.loadData(self.dataFile)
         clf.fit(X, y)
@@ -160,14 +176,11 @@ class ChorusClassifier:
             self.train()
         clzIdx = np.nonzero(self.classes_ == "chorus")[0][0]
         probs = self.clf.predict_proba(features)[:, clzIdx]
-        if np.max(probs) < 0.5:
-            # default action: select clique with maximal prob
+        if np.max(probs) >= 0.5:
+            cindices = np.where(probs >= 0.5)[0]
+        else:
             logger.warning(f"chorus detection failed, maxProb={np.max(probs)}")
             cindices = np.where(probs >= np.max(probs) - 0.05)[0]
-        else:
-            cindices = np.where(probs >= 0.5)[0]
-        # res = self.clf.predict(features)
-        # cindices = np.nonzero(res == 'chorus')[0]
         return cindices
 
     def loadData(self, dataFile):
