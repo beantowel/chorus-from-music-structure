@@ -66,23 +66,23 @@ def testCCDataset(method):
 
 # build Preprocess Dataset for feature extraction
 transforms = [
-    # ExtractMel(),
-    # GenerateSSM(),
-    # ExtractCliques(),
+    ExtractMel(),
+    GenerateSSM(),
+    ExtractCliques(),
 ]
 methods = {
     "seqRecur": GetAlgoData(AlgoSeqRecur()),
-    # "scluster": GetAlgoData(MsafAlgos("scluster")),
-    # "cnmf": GetAlgoData(MsafAlgos("cnmf")),
-    # "sf": GetAlgoData(MsafAlgosBdryOnly("sf")),
-    # "olda": GetAlgoData(MsafAlgosBdryOnly("olda")),
-    # "foote": GetAlgoData(MsafAlgosBdryOnly("foote")),
-    # "gtBoundary": GetAlgoData(GroudTruthStructure()),
+    "scluster": GetAlgoData(MsafAlgos("scluster")),
+    "cnmf": GetAlgoData(MsafAlgos("cnmf")),
+    "sf": GetAlgoData(MsafAlgosBdryOnly("sf")),
+    "olda": GetAlgoData(MsafAlgosBdryOnly("olda")),
+    "foote": GetAlgoData(MsafAlgosBdryOnly("foote")),
+    "gtBoundary": GetAlgoData(GroudTruthStructure()),
 }
 
 if __name__ == "__main__":
     for tf in transforms:
-        buildPreprocessDataset(USING_DATASET, tf, force=True)
+        buildPreprocessDataset(USING_DATASET, tf, force=False)
     for name, getDataFun in methods.items():
         cpath_train = CHORUS_CLASSIFIER_TRAIN_DATA_FILE[name]
         cpath_val = CHORUS_CLASSIFIER_VAL_DATA_FILE[name]

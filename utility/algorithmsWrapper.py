@@ -1,7 +1,10 @@
 import msaf
 import os
+import json
 import subprocess
+import unicodedata
 from itertools import chain
+from pychorus import find_and_output_chorus
 from mir_eval.io import load_labeled_intervals
 
 from models.classifier import *
@@ -11,19 +14,6 @@ from utility.dataset import *
 from utility.common import *
 from configs.modelConfigs import *
 from configs.configs import ALGO_BASE_DIRS
-
-
-def matchCliqueLabel(times, boundaries, cliques, dataset, idx):
-    intervals = np.array(
-        [(times[i], times[j]) for i, j in zip(boundaries[:-1], boundaries[1:])]
-    )
-    labels = np.full(intervals.shape[0], "others", dtype="U16")
-    clabels = getCliqueLabels(dataset[idx]["gt"], cliques, intervals)
-    for c, l in zip(cliques, clabels):
-        for i in c:
-            labels[i] = l
-    mirexFmt = (intervals, labels)
-    return mirexFmt
 
 
 class AlgoSeqRecur:
@@ -69,8 +59,9 @@ class AlgoSeqRecurBound:
         ssm_f, _ = getFeatures(dataset, idx)
         cliques = self.rawAlgo._process(dataset, idx, ssm_f)
 
-        boundaries = np.arange(ssm_f[0].shape[0], dtype=int)
-        mirexFmt = matchCliqueLabel(ssm_f[0], boundaries, cliques, dataset, idx)
+        times = ssm_f[0]
+        intervals = np.array([(times[i], times[i + 1]) for i in range(len(times) - 1)])
+        mirexFmt = matchCliqueLabel(intervals, cliques, dataset[idx]["gt"])
         return mirexFmt
 
 
@@ -213,14 +204,71 @@ class GroudTruthStructure:
 class PopMusicHighlighter:
     def __init__(self, basedir=ALGO_BASE_DIRS["PopMusicHighlighter"]):
         self.basedir = basedir
+        self._convertFileName()
+
+    def _convertFileName(self, norm="NFD"):
+        files = os.listdir(self.basedir)
+        for fileName in files:
+            normalName = unicodedata.normalize(norm, fileName)
+            src = os.path.join(self.basedir, fileName)
+            dst = os.path.join(self.basedir, normalName)
+            if src != dst:
+                os.rename(src, dst)
+                logger.info(f"rename, src='{src}' dst='{dst}'")
 
     def __call__(self, dataset, idx):
         wavPath = dataset[idx]["wavPath"]
         title = dataset[idx]["title"]
         dur = librosa.get_duration(filename=wavPath)
         target = os.path.join(self.basedir, f"{title}_highlight.npy")
-        assert os.path.exists(target)
+        assert os.path.exists(target), f"target={target}"
         x = np.load(target)
-        intervals = np.array([(0, x[0]), (x[0], x[1]), (x[1], dur),])
-        labels = np.array(["others", "chorus", "others",], dtype="U16")
-        return (intervals, labels)
+        return singleChorusSection(x[0], x[1], dur)
+
+
+class RefraiD:
+    def __init__(self, baseDir=DATASET_BASE_DIRS["LocalTemporary_Dataset"]):
+        self.cacheDir = os.path.join(baseDir, "RefraiD-cache")
+        if not os.path.exists(self.cacheDir):
+            os.mkdir(self.cacheDir)
+
+    def _cacheFile(self, dataset, idx):
+        title = dataset[idx]["title"]
+        return os.path.join(
+            self.cacheDir, f"{dataset.__class__.__name__}-{idx}-{title}.json"
+        )
+
+    def _readCache(self, dataset, idx):
+        filename = self._cacheFile(dataset, idx)
+        if not os.path.exists(filename):
+            return None
+        with open(filename) as f:
+            data = json.load(f)
+            return data["start"], data["clip_length"]
+
+    def _writeCache(self, dataset, idx, start, clip_length):
+        filename = self._cacheFile(dataset, idx)
+        data = {"start": start, "clip_length": clip_length}
+        with open(filename, "w") as f:
+            logger.info(f"RefraiD writing to cache={filename}")
+            json.dump(data, f)
+
+    def __call__(self, dataset, idx, clip_length=30):
+        wavPath = dataset[idx]["wavPath"]
+        dur = librosa.get_duration(filename=wavPath)
+        data = self._readCache(dataset, idx)
+        if data is not None:
+            start, clip_length = data
+        else:
+            start = find_and_output_chorus(wavPath, None, clip_length)
+            while start is None and clip_length > 5:
+                clip_length -= 5
+                logger.warn(
+                    f"RefraiD failed to detect chorus, reduce clip_length={clip_length}"
+                )
+                start = find_and_output_chorus(wavPath, None, clip_length)
+            if start is None:
+                logger.warn(f"RefraiD failed to detect chorus")
+                start = 0
+            self._writeCache(dataset, idx, start, clip_length)
+        return singleChorusSection(start, start + clip_length, dur)

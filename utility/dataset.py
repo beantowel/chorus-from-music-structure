@@ -3,6 +3,7 @@ import time
 import pickle
 import librosa
 import time
+import unicodedata
 import numpy as np
 from copy import deepcopy, copy
 from itertools import chain
@@ -259,6 +260,8 @@ class RWC_Popular_Dataset(BaseStructDataset):
                 f"AIST.RWC-MDB-{X}-2001.CHORUS",
                 f"RM-{X}{num+1:03d}.CHORUS.TXT",
             )
+            if unicodedata.normalize("NFD", title) != title:
+                logger.warn(f"file={wavPath} titile={title} is not in unicode NFD form")
             self.pathPairs.append(StructDataPathPair(title, wavPath, GTPath))
 
     def loadGT(self, GTPath):

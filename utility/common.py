@@ -94,10 +94,24 @@ def matchLabel(est_intvs, gt):
             [intervalIntersection(intv, (onset, offset)) for intv in ref_intvs]
         )
         est_dur = offset - onset
-        predicate = all([intersec >= est_dur / 2,])
+        predicate = all(
+            [
+                intersec >= est_dur / 2,
+            ]
+        )
         label = "chorus" if predicate else "others"
         gt_est_labels.append(label)
     return np.array(gt_est_labels)
+
+
+def matchCliqueLabel(intervals, cliques, gt):
+    labels = np.full(intervals.shape[0], "others", dtype="U16")
+    clabels = getCliqueLabels(gt, cliques, intervals)
+    for c, l in zip(cliques, clabels):
+        for i in c:
+            labels[i] = l
+    mirexFmt = (intervals, labels)
+    return mirexFmt
 
 
 def getCliqueLabels(gt, cliques, intervals):
@@ -111,8 +125,8 @@ def getCliqueLabels(gt, cliques, intervals):
         ]
         intersec = np.sum(
             [
-                intervalIntersection(intv, (onset, offset))
-                for onset, offset in cintvs
+                intervalIntersection(intv, cintv)
+                for cintv in cintvs
                 for intv in ref_intvs
             ]
         )
@@ -127,7 +141,11 @@ def getCliqueLabels(gt, cliques, intervals):
         p = intersec / cdur if cdur > 0 else 0
         r = intersec / hit_ref_duration if hit_ref_duration > 0 else 0
         predicate = all(
-            [p >= CC_PRECISION, r >= CC_RECALL, cdur >= MINIMUM_CHORUS_DUR,]
+            [
+                p >= CC_PRECISION,
+                r >= CC_RECALL,
+                cdur >= MINIMUM_CHORUS_DUR,
+            ]
         )
         # ml = matchLabel(cintvs, gt)
         # predicate = sum(ml == 'chorus') >= len(ml) * 0.5
@@ -176,6 +194,15 @@ def expSSM(ssm, inplace=True):
     ssm -= EPSILON
     ssm[ssm < 0] = 0
     return ssm
+
+
+def singleChorusSection(begin, end, dur):
+    intervals = np.array([(0, begin), (begin, end), (end, dur)])
+    labels = np.array(
+        ["others", "chorus", "others"],
+        dtype="U16",
+    )
+    return (intervals, labels)
 
 
 def printArray(arr, name, show=False):

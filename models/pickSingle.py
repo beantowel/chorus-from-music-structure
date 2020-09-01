@@ -2,7 +2,7 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 from configs.configs import logger, DEBUG
-from utility.common import mergeIntervals, intervalIntersection
+from utility.common import mergeIntervals, intervalIntersection, singleChorusSection
 
 
 def maxOverlap(mirexFmt, chorusDur=30.0):
@@ -25,8 +25,21 @@ def maxOverlap(mirexFmt, chorusDur=30.0):
 
     begin = intervals[idx][0]
     end = min(dur, begin + chorusDur)
-    intervals = np.array([(0, begin), (begin, end), (end, dur),])
-    labels = np.array(["others", "chorus", "others",], dtype="U16")
+    intervals = np.array(
+        [
+            (0, begin),
+            (begin, end),
+            (end, dur),
+        ]
+    )
+    labels = np.array(
+        [
+            "others",
+            "chorus",
+            "others",
+        ],
+        dtype="U16",
+    )
     return (intervals, labels)
 
 
@@ -58,6 +71,19 @@ def maxArousal(mirexFmt, mels_f, chorusDur=30.0, window=10.0, show=DEBUG):
     logger.debug(
         f"begin={begin} end={end} shift={begin-intervals[1][0]} intervals={intervals}"
     )
-    intervals = np.array([(0, begin), (begin, end), (end, dur),])
-    labels = np.array(["others", "chorus", "others",], dtype="U16")
-    return (intervals, labels)
+    intervals = np.array(
+        [
+            (0, begin),
+            (begin, end),
+            (end, dur),
+        ]
+    )
+    labels = np.array(
+        [
+            "others",
+            "chorus",
+            "others",
+        ],
+        dtype="U16",
+    )
+    return singleChorusSection(begin, end, dur)

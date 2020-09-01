@@ -11,7 +11,7 @@ ALGO_BASE_DIRS = {
 # dataset location and preprocess cache files location
 DATASET_BASE_DIRS = {
     "SALAMI": f"{SA_HOME}/dataset/salami",
-    "RWC": f"{SA_HOME}/dataset/melodyExtraction/RWC",
+    "RWC": f"{SA_HOME}/dataset/RWC",
     "LocalTemporary_Dataset": f"{SA_HOME}/dataset/localTmp",
 }
 # output data location
@@ -27,7 +27,7 @@ mk_dirs = [
     PRED_DIR,
     ALGO_BASE_DIRS["TmpDir"],
     DATASET_BASE_DIRS["LocalTemporary_Dataset"],
-    os.path.join(DATASET_BASE_DIRS["SALAMI"], "features"),
+    # os.path.join(DATASET_BASE_DIRS["SALAMI"], "features"),
     os.path.join(DATASET_BASE_DIRS["RWC"], "RWC-MDB-P-2001/features"),
 ]
 for path in mk_dirs:
