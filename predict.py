@@ -2,6 +2,7 @@ import librosa
 import click
 import json
 import os
+import string
 import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
@@ -26,7 +27,7 @@ def plotMats(matrices, titles, show=DEBUG):
     for i, mat in enumerate(matrices):
         logger.debug(f"{titles[i]}{mat.shape}, min={np.min(mat)}, max={np.max(mat)}")
         ax = axis[i]
-        ax.set_title(titles[i])
+        ax.set_title(f"({string.ascii_lowercase[i]}) {titles[i]}")
         extent = [-1, len(mat) * SSM_TIME_STEP]
         ax.imshow(mat, interpolation="none", extent=extent + extent[::-1])
         ax.set_xlabel("time/s")

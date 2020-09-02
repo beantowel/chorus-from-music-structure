@@ -1,3 +1,4 @@
+import click
 import numpy as np
 import matplotlib.pyplot as plt
 from multiprocessing import Pool
@@ -65,11 +66,11 @@ def testCCDataset(method):
 
 
 # build Preprocess Dataset for feature extraction
-transforms = [
-    ExtractMel(),
-    GenerateSSM(),
-    ExtractCliques(),
-]
+transforms = {
+    "extract-mel": ExtractMel(),
+    "generate-ssm": GenerateSSM(),
+    "extract-cliques": ExtractCliques(),
+}
 methods = {
     "seqRecur": GetAlgoData(AlgoSeqRecur()),
     "scluster": GetAlgoData(MsafAlgos("scluster")),
@@ -80,12 +81,28 @@ methods = {
     "gtBoundary": GetAlgoData(GroudTruthStructure()),
 }
 
-if __name__ == "__main__":
-    for tf in transforms:
-        buildPreprocessDataset(USING_DATASET, tf, force=False)
-    for name, getDataFun in methods.items():
+
+@click.command()
+@click.option(
+    "--transform", nargs=1, type=click.Choice(transforms.keys()), default=None
+)
+@click.option("--method", nargs=1, type=click.Choice(methods.keys()), default=None)
+@click.option("--force", nargs=1, type=click.BOOL, default=False)
+def main(transform, method, force):
+    buildTransforms = (
+        transforms.values() if transform is None else [transforms[transform]]
+    )
+    trainMethods = methods.items() if method is None else [(method, methods[method])]
+
+    for tf in buildTransforms:
+        buildPreprocessDataset(USING_DATASET, tf, force=force)
+    for name, getDataFun in trainMethods:
         cpath_train = CHORUS_CLASSIFIER_TRAIN_DATA_FILE[name]
         cpath_val = CHORUS_CLASSIFIER_VAL_DATA_FILE[name]
         buildCCDataset(cpath_train, CLF_TRAIN_SET, getDataFun)
         buildCCDataset(cpath_val, CLF_VAL_SET, getDataFun)
         testCCDataset(name)
+
+
+if __name__ == "__main__":
+    main()

@@ -44,6 +44,9 @@ def smoothCliques(cliques, size, kernel_size=SMOOTH_KERNEL_SIZE):
 
 def cliquesFromSSM(ssm_f, show=False):
     ssm = ssm_f[1] - np.max(ssm_f[1])
+    median = np.median(ssm)
+    for i in range(ssm.shape[0]):
+        ssm[i, i] = median
     labels = affinityPropagation.fit_predict(ssm)
     cliques = cliquesFromArr(labels)
     cliques = sorted(cliques, key=lambda c: c[0])
@@ -161,7 +164,11 @@ def buildRecurrence(cliques, times):
     indices = np.argsort(errors)
     for i in indices:
         newCliques = mergedCliquesList[i]
-        predicate = all([len(newCliques) >= MIN_STRUCTURE_COUNT,])
+        predicate = all(
+            [
+                len(newCliques) >= MIN_STRUCTURE_COUNT,
+            ]
+        )
         if predicate:
             return newCliques
     logger.warn(f"seqrecur failed, cliqueLengths={[len(x) for x in mergedCliquesList]}")

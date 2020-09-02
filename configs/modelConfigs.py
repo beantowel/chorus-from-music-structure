@@ -9,12 +9,11 @@ USING_DATASET = RWC_Popular_Dataset()
 
 # preprocess transforms
 SSM_USING_MELODY = True
-# <without-melody>:11 <with-melody>:12 <melody-only>:13
-SSM_TRANSFORM_IDENTIFIER = 11 if not SSM_USING_MELODY else 12
 MEL_TRANSFORM_IDENTIFIER = 8
-# BEAT_TRANSFORM_IDENTIFIER = 9
-# STFT_TRANSFORM_IDENTIFIER = 10
-CLI_TRANSFORM_IDENTIFIER = 14
+SSM_TRANSFORM_IDENTIFIER = (
+    11 if not SSM_USING_MELODY else 12
+)  # <without-melody>:11 <with-melody>:12 <melody-only>:13
+CLI_TRANSFORM_IDENTIFIER = 15 if not SSM_USING_MELODY else 14
 
 # similarity fusion settings
 REC_SMOOTH = 9
