@@ -24,7 +24,11 @@ SSM_SEMANTIC_LABEL_DIC = USING_DATASET.semanticLabelDic()
 SSM_BACKGROUND_INDEX = len(set(SSM_SEMANTIC_LABEL_DIC.values()))
 SAMPLE_RATE = 22050
 SSM_TIME_STEP = 1 / SAMPLE_RATE * 512 * 10  # GraphDitty hop=512, win_fac=10
-SSM_FEATURES = {11: ["Fused"], 12: ["Fused"], 13: ["Melody"],}[SSM_TRANSFORM_IDENTIFIER]
+SSM_FEATURES = {
+    11: ["Fused"],
+    12: ["Fused"],
+    13: ["Melody"],
+}[SSM_TRANSFORM_IDENTIFIER]
 
 # sequence recurrence algorithm
 SSM_LOG_THRESH = -4.5

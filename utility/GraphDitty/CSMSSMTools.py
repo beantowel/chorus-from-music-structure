@@ -50,4 +50,3 @@ def getShiftInvariantCSM(metricFunc, wins_per_block=20, n_seq=1):
         return res
 
     return fun
-
