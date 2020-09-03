@@ -5,7 +5,7 @@ from configs.configs import logger, DEBUG
 from utility.common import mergeIntervals, intervalIntersection, singleChorusSection
 
 
-def maxOverlap(mirexFmt, chorusDur=30.0):
+def maxOverlap(mirexFmt, chorusDur=30.0, centering=False):
     intervals, labels = mergeIntervals(mirexFmt)
     chorusIndices = np.nonzero(np.char.startswith(labels, "chorus"))[0]
     dur = intervals[-1][1]
@@ -23,8 +23,13 @@ def maxOverlap(mirexFmt, chorusDur=30.0):
     selectIndex = np.argmax(chorusIntsec)
     idx = chorusIndices[selectIndex]
 
-    begin = intervals[idx][0]
-    end = min(dur, begin + chorusDur)
+    if not centering:
+        begin = intervals[idx][0]
+        end = min(dur, begin + chorusDur)
+    else:
+        center = np.mean(intervals[idx])
+        begin = center - chorusDur / 2
+        end = center + chorusDur / 2
     intervals = np.array(
         [
             (0, begin),
@@ -49,9 +54,9 @@ def arousalScore(t, times, pitches, win=5):
     return np.sum(afterPitches) - np.sum(beforePitches)
 
 
-def maxArousal(mirexFmt, mels_f, chorusDur=30.0, window=10.0, show=DEBUG):
+def maxArousal(mirexFmt, mels_f, chorusDur=30.0, window=6.0, show=DEBUG):
 
-    intervals, labels = maxOverlap(mirexFmt, chorusDur=30.0)
+    intervals, _ = maxOverlap(mirexFmt, chorusDur=30.0, centering=False)
     chorusIdx = 1
     # intervals, labels = mergeIntervals(mirexFmt)
     # chorusIdx = np.nonzero(np.char.startswith(labels, "chorus"))[0][0]
@@ -60,7 +65,7 @@ def maxArousal(mirexFmt, mels_f, chorusDur=30.0, window=10.0, show=DEBUG):
     times, pitches = mels_f
 
     begin = intervals[chorusIdx][0]
-    mask = (times >= begin - window) & (times <= begin + window / 2)
+    mask = (times >= begin - window / 2) & (times <= begin + window / 2)
     scores = [arousalScore(t, times, pitches) for t in times[mask]]
     if show:
         plt.plot(pitches[mask])

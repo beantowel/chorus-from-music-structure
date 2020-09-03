@@ -86,9 +86,9 @@ methods = {
 @click.option(
     "--transform", nargs=1, type=click.Choice(transforms.keys()), default=None
 )
-@click.option("--method", nargs=1, type=click.Choice(methods.keys()), default=None)
 @click.option("--force", nargs=1, type=click.BOOL, default=False)
-def main(transform, method, force):
+@click.option("--method", nargs=1, type=click.Choice(methods.keys()), default=None)
+def main(transform, force, method):
     buildTransforms = (
         transforms.values() if transform is None else [transforms[transform]]
     )

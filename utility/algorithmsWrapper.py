@@ -45,8 +45,9 @@ class AlgoSeqRecurSingle(AlgoSeqRecur):
         super(AlgoSeqRecurSingle, self).__init__()
 
     def __call__(self, dataset, idx):
-        mirexFmt = super(AlgoSeqRecurSingle, self).__call__(dataset, idx)
-        _, mels_f = getFeatures(dataset, idx)
+        ssm_f, mels_f = getFeatures(dataset, idx)
+        cliques = self._process(dataset, idx, ssm_f)
+        mirexFmt = chorusDetection(cliques, ssm_f[0], mels_f, self.clf, single=False)
         mirexFmtSingle = maxArousal(mirexFmt, mels_f)
         return mirexFmtSingle
 

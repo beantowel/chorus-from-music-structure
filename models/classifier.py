@@ -22,10 +22,10 @@ def numberCliques(cliques, labels):
     return labels
 
 
-def chorusDetection(cliques, ssm_times, mels_f, clf):
+def chorusDetection(cliques, ssm_times, mels_f, clf, single=False):
     boundaries = np.arange(len(ssm_times))
     features = getCliqueFeatures(cliques, boundaries, ssm_times, mels_f)
-    cindices = clf.predict(features)
+    cindices = clf.predict(features, single=single)
     indices = [i for cidx in cindices for i in cliques[cidx]]
 
     # assign labels (maximum length=16)
@@ -171,17 +171,20 @@ class ChorusClassifier:
         self.classes_ = clf.classes_
         self.trained = True
 
-    def predict(self, features):
+    def predict(self, features, single=False):
         if not self.trained:
             self.train()
         clzIdx = np.nonzero(self.classes_ == "chorus")[0][0]
         probs = self.clf.predict_proba(features)[:, clzIdx]
-        if np.max(probs) >= 0.5:
-            cindices = np.where(probs >= 0.5)[0]
+        if single:
+            return [np.argmax(probs)]
         else:
-            logger.warning(f"chorus detection failed, maxProb={np.max(probs)}")
-            cindices = np.where(probs >= np.max(probs) - 0.05)[0]
-        return cindices
+            if np.max(probs) >= 0.5:
+                indices = np.where(probs >= 0.5)[0]
+            else:
+                logger.warning(f"chorus detection failed, maxProb={np.max(probs)}")
+                indices = np.where(probs >= np.max(probs) - 0.05)[0]
+            return indices
 
     def loadData(self, dataFile):
         if os.path.exists(dataFile):
