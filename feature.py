@@ -82,20 +82,29 @@ methods = {
 }
 
 
+@click.group()
+def cli():
+    pass
+
+
 @click.command()
 @click.option(
     "--transform", nargs=1, type=click.Choice(transforms.keys()), default=None
 )
 @click.option("--force", nargs=1, type=click.BOOL, default=False)
-@click.option("--method", nargs=1, type=click.Choice(methods.keys()), default=None)
-def main(transform, force, method):
+def build(transform, force):
     buildTransforms = (
         transforms.values() if transform is None else [transforms[transform]]
     )
-    trainMethods = methods.items() if method is None else [(method, methods[method])]
 
     for tf in buildTransforms:
         buildPreprocessDataset(USING_DATASET, tf, force=force)
+
+
+@click.command()
+@click.option("--method", nargs=1, type=click.Choice(methods.keys()), default=None)
+def train(method):
+    trainMethods = methods.items() if method is None else [(method, methods[method])]
     for name, getDataFun in trainMethods:
         cpath_train = CHORUS_CLASSIFIER_TRAIN_DATA_FILE[name]
         cpath_val = CHORUS_CLASSIFIER_VAL_DATA_FILE[name]
@@ -104,5 +113,7 @@ def main(transform, force, method):
         testCCDataset(name)
 
 
+cli.add_command(build)
+cli.add_command(train)
 if __name__ == "__main__":
-    main()
+    cli()

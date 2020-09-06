@@ -87,9 +87,6 @@ def getCliqueFeatures(cliques, boundaries, ssm_times, mels_f):
         heads = cliqueHeads(clique)
         head = time(heads[0]) / dur
         headx = time(heads[-1]) / dur
-        arousal = np.mean(
-            [arousalScore(time(head), mels_f[0], mels_f[1], win=5) for head in heads]
-        )
 
         feature = (
             cdur,
@@ -100,14 +97,12 @@ def getCliqueFeatures(cliques, boundaries, ssm_times, mels_f):
             head,
             headx,
             count,
-            arousal,
         )
         return feature
 
     def getRelativeFeature(features):
-        relSelector = [0, 1, 2, 3, 4, 5, 6, 7]
-        relmaxs = np.max(features[:, relSelector], axis=0)
-        rels = features[:, relSelector] / (relmaxs + EPSILON)
+        relmaxs = np.max(features, axis=0)
+        rels = features / (relmaxs + EPSILON)
         newFeatures = np.array(rels)
         return newFeatures
 
@@ -118,8 +113,9 @@ def getCliqueFeatures(cliques, boundaries, ssm_times, mels_f):
             ranks[indices] = np.arange(len(indices))[::-1]
             return ranks
 
-        rnkSelector = [0, 1, 2, 3, 4, 5, 6, 7]
-        newFeatures = np.array([ranks(features[:, rnkIdx]) for rnkIdx in rnkSelector]).T
+        newFeatures = np.array(
+            [ranks(features[:, i]) for i in range(features.shape[1])]
+        ).T
         return newFeatures
 
     def getPrvFeature(features):
@@ -152,7 +148,6 @@ class ChorusClassifier:
             "head",
             "headx",
             "count",
-            "arousal",
         ]
         flen = len(self.feature_names)
         self.feature_names.extend([f"rnk_{s}" for s in self.feature_names[:flen]])

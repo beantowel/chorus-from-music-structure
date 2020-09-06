@@ -28,9 +28,15 @@ def getCSMCosine(X, Y):
     XNorm[XNorm == 0] = 1
     YNorm = np.sqrt(np.sum(Y ** 2, 1))
     YNorm[YNorm == 0] = 1
-    D = (X / XNorm[:, None]).dot((Y / YNorm[:, None]).T)
-    D = 1 - D  # Make sure distance 0 is the same and distance 2 is the most different
-    return D
+    # assert np.min(X) >= 0 and np.min(Y) >= 0, f"{np.min(X)} {np.min(Y)}"
+    similarity = (X / XNorm[:, None]).dot((Y / YNorm[:, None]).T)
+    similarity[similarity >= 1] = 1
+    similarity[similarity <= -1] = -1
+    # Make sure distance 0 is the same and distance 2 is the most different
+    distance = 1 - similarity
+    return distance
+    # angularDistance = 4 * np.arccos(similarity) / np.pi
+    # return angularDistance
 
 
 def getShiftInvariantCSM(metricFunc, wins_per_block=20, n_seq=1):
