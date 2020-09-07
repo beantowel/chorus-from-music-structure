@@ -3,7 +3,6 @@ import pickle
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 
-from models.pickSingle import arousalScore
 from utility.common import *
 from utility.transform import *
 from configs.configs import logger

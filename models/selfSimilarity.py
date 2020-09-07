@@ -11,7 +11,13 @@ from configs.configs import logger
 
 
 def selfSimilarityMatrix(
-    wavfile, mel=None, win_fac=10, wins_per_block=20, K=5, sr=22050, hop_length=512,
+    wavfile,
+    mel=None,
+    win_fac=10,
+    wins_per_block=20,
+    K=5,
+    sr=22050,
+    hop_length=512,
 ):
     logger.debug(f"loading:{wavfile}")
     y, sr = librosa.load(wavfile, sr=sr)
@@ -84,15 +90,18 @@ def selfSimilarityMatrix(
     W = doSimilarityFusionWs(Ws, K=K, niters=3, reg_diag=1.0, reg_neighbs=0.5)
     printArray(W, "fused W")
     res = {
-        "Ws": {"Fused": W, "Melody": WPitches if mel is not None else None,},
+        "Ws": {
+            "Fused": W,
+            "Melody": WPitches if mel is not None else None,
+        },
         "times": times,
     }
     return res
 
 
 def pitchChroma(pitches, n_class=24, n_step=10, n_seq=5):
-    """ input: [t]
-        output: [n_class*n_seq, t] """
+    """input: [t]
+    output: [n_class*n_seq, t]"""
     pitches = deepcopy(pitches)
     size = pitches.shape[-1]
     nonVoice = pitches <= 0  # whether it's a voicing frame
@@ -145,4 +154,3 @@ def feature2W(feature, size, aggregator, simFunction, wins_per_block=20, K=5):
         f"shapes, feature{feature.shape} Xfeature{Xfeature.shape} Wfeature{Wfeature.shape}"
     )
     return Wfeature
-

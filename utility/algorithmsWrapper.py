@@ -24,6 +24,7 @@ class AlgoSeqRecur:
         ssm_f, mels_f = getFeatures(dataset, idx)
         cliques = self._process(dataset, idx, ssm_f)
         mirexFmt = chorusDetection(cliques, ssm_f[0], mels_f, self.clf)
+        mirexFmt = tuneIntervals(mirexFmt, mels_f)
         return mirexFmt
 
     def getStructure(self, dataset, idx):
@@ -48,8 +49,8 @@ class AlgoSeqRecurSingle(AlgoSeqRecur):
         ssm_f, mels_f = getFeatures(dataset, idx)
         cliques = self._process(dataset, idx, ssm_f)
         mirexFmt = chorusDetection(cliques, ssm_f[0], mels_f, self.clf, single=False)
-        mirexFmtSingle = maxArousal(mirexFmt, mels_f)
-        return mirexFmtSingle
+        mirexFmtSingle = maxOverlap(mirexFmt, chorusDur=30.0, centering=False)
+        return tuneIntervals(mirexFmtSingle, mels_f, chorusDur=30.0, window=6.0)
 
 
 class AlgoSeqRecurBound:

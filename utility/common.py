@@ -205,6 +205,34 @@ def singleChorusSection(begin, end, dur):
     return (intervals, labels)
 
 
+def multiChorusSections(intvs, dur):
+    def key(x):
+        return int(x * 100)
+
+    # value 1=chorus begin -1=chorus end
+    boundaries = defaultdict(int)
+    for intv in intvs:
+        boundaries[key(intv[0])] += 1
+        boundaries[key(intv[1])] -= 1
+    intervals, labels = [[0, 0]], ["others"]
+    state = 0  # 0:others >0:chorus
+    for bdr in sorted(boundaries.keys()):
+        t = bdr / 100.0
+        intervals[-1][1] = t
+        intervals.append([t, 0])
+        state += boundaries[bdr]
+        if state == 0:
+            labels.append("others")
+        elif state > 0:
+            labels.append("chorus")
+        else:
+            logger.error(f"invalid state, boundaries={boundaries}")
+    intervals[-1][1] = dur
+    logger.debug(f"multi chorus, intvs={intvs} intervals={intervals} labels={labels}")
+    mirexFmt = (np.array(intervals), np.array(labels, dtype="U16"))
+    return mergeIntervals(mirexFmt)
+
+
 def printArray(arr, name, show=False):
     logger.debug(f"{name}{arr.shape}, min={np.min(arr)} max={np.max(arr)}")
     if show:
