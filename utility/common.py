@@ -77,8 +77,9 @@ def mergeIntervals(mirexFmt):
 
 def extractFunctions(labels: np.ndarray, funs: List[str] = ["chorus"]) -> np.ndarray:
     newLabels = []
-    for lab in labels:
-        preds = list(map(lambda fun: lab.lower().startswith(fun), funs))
+    for label in labels:
+        # if label startswith any functional string
+        preds = list(map(lambda fun: label.lower().startswith(fun), funs))
         if any(preds):
             newLabels.append(funs[preds.index(True)])
         else:

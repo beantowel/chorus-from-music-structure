@@ -51,7 +51,8 @@ METRIC_NAMES = [
     "dtct-F",
 ]
 PLOT_METRIC_FIELDS = [
-    ["ovlp-F", "sovl-F"],
+    ["ovlp-F"],
+    ["sovl-F"],
 ]
 # PLOT_METRIC_FIELDS = [
 #     ['ovlp-P', 'ovlp-R', 'ovlp-F'],

@@ -75,9 +75,9 @@ def drawSegments(ref, est, ssm, times):
         size = ssm.shape[-1]
         intvs, labels = mirexFmt
         labels = extractFunctions(labels)
-        iLabels = np.array([1 if label == "chorus" else 0 for label in labels])
+        labelClz = np.array([1 if label == "chorus" else 0 for label in labels])
         intvs = (intvs / times[-1] * size).astype(int)
-        for intv, label in zip(intvs, iLabels):
+        for intv, label in zip(intvs, labelClz):
             if up:
                 ssm[: size // 2, intv[0] : intv[1]] += label
             else:
@@ -98,7 +98,8 @@ def drawSegments(ref, est, ssm, times):
     "--algo", nargs=1, type=click.Choice(["multi", "single"]), default="multi"
 )
 @click.option("--force", nargs=1, type=click.BOOL, default=False)
-def main(audiofiles, outputdir, metaoutputdir, algo, force):
+@click.option("--workers", nargs=1, type=click.INT, default=NUM_WORKERS)
+def main(audiofiles, outputdir, metaoutputdir, algo, force, workers):
     logger.info(f"preprocess to generate features")
     ddataset = DummyDataset(audiofiles)
     transforms = [
@@ -108,7 +109,7 @@ def main(audiofiles, outputdir, metaoutputdir, algo, force):
     ]
     for tf in transforms:
         preDataset = Preprocess_Dataset(tf.identifier, ddataset)
-        preDataset.build(tf.preprocessor, force=force)
+        preDataset.build(tf.preprocessor, force=force, num_workers=workers)
 
     for i, pair in enumerate(ddataset.pathPairs):
         audioFileName, audiofile, _ = pair

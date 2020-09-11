@@ -2,6 +2,7 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 from configs.configs import logger, DEBUG
+from configs.modelConfigs import CHORUS_DURATION_SINGLE, CHORUS_DURATION, TUNE_SCOPE
 from utility.common import (
     mergeIntervals,
     intervalIntersection,
@@ -11,7 +12,7 @@ from utility.common import (
 )
 
 
-def maxOverlap(mirexFmt, chorusDur=30.0, centering=False):
+def maxOverlap(mirexFmt, chorusDur=CHORUS_DURATION_SINGLE, centering=False):
     intervals, labels = mergeIntervals(mirexFmt)
     chorusIndices = np.nonzero(np.char.startswith(labels, "chorus"))[0]
     dur = intervals[-1][1]
@@ -39,25 +40,34 @@ def maxOverlap(mirexFmt, chorusDur=30.0, centering=False):
     return singleChorusSection(begin, end, dur)
 
 
-def arousalPoint(time, times, pitches, window, show=False):
+def arousalPoint(time, times, pitches, window, show=DEBUG):
     def arousalScore(t):
-        beforePitches = pitches[(times >= t - window) & (times <= t)]
-        afterPitches = pitches[(times >= t) & (times <= t + window)]
-        return np.sum(afterPitches) - np.sum(beforePitches)
+        beforePitches = pitches[(times >= t - TUNE_SCOPE / 2) & (times <= t)]
+        afterPitches = pitches[(times >= t) & (times <= t + TUNE_SCOPE / 2)]
+        score = np.sum(afterPitches) - np.sum(beforePitches)
+        return score / len(beforePitches)
 
     mask = (times >= time - window / 2) & (times <= time + window / 2)
     scores = [arousalScore(t) for t in times[mask]]
     point = times[mask][np.argmax(scores)]
     if show:
-        plt.plot(pitches[mask])
+        logger.debug(
+            f"point={point} times={times[mask][0]}~{times[mask][-1]} window={window}"
+        )
+        plt.plot(times[mask], pitches[mask], label="pitch")
+        plt.plot(times[mask], scores, label="score")
+        plt.scatter(point, np.max(scores))
+        plt.xlabel("time/s")
+        plt.ylabel("freq/Hz")
+        plt.legend()
         plt.show()
     return point
 
 
-def tuneIntervals(mirexFmt, mels_f, chorusDur=10.0, window=6.0):
+def tuneIntervals(mirexFmt, mels_f, chorusDur, window):
     mirexFmt = mergeIntervals(mirexFmt)
+    dur = mirexFmt[0][-1][1]
     intvs = filterIntvs(mirexFmt, fun="chorus")
-    dur = intvs[-1][1]
     tuneIntvs = []
     times, pitches = mels_f
     for intv in intvs:

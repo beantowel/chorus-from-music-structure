@@ -18,9 +18,6 @@ CLI_TRANSFORM_IDENTIFIER = 15 if not SSM_USING_MELODY else 14
 # similarity fusion settings
 REC_SMOOTH = 9
 EPSILON = 1e-9
-DATASET_LABEL_DIC = USING_DATASET.getLabelDic()
-SSM_SEMANTIC_LABEL_DIC = USING_DATASET.semanticLabelDic()
-SSM_BACKGROUND_INDEX = len(set(SSM_SEMANTIC_LABEL_DIC.values()))
 SAMPLE_RATE = 22050
 SSM_TIME_STEP = 1 / SAMPLE_RATE * 512 * 10  # GraphDitty hop=512, win_fac=10
 SSM_FEATURES = {
@@ -29,25 +26,41 @@ SSM_FEATURES = {
     13: ["Melody"],
 }[SSM_TRANSFORM_IDENTIFIER]
 
+# pitch chroma feature
+PITCH_CHROMA_CLASS = 24
+PITCH_CHROMA_STEP = 10
+PITCH_CHROMA_SEQ = 5
+# PITCH_CHROMA_CLASS = int(os.getenv("PC_CLASS"))
+# PITCH_CHROMA_STEP = int(os.getenv("PC_STEP"))
+# PITCH_CHROMA_SEQ = int(os.getenv("PC_SEQ"))
+
 # sequence recurrence algorithm
 SSM_LOG_THRESH = -4.5
-
 ADJACENT_DELTA_DISTANCE = 10
 DELTA_DIS_RANGE = [5, 10, 20]
-# DELTA_BLOCK_RANGE = [0]
 SMOOTH_KERNEL_SIZE = 23
 SMOOTH_KERNEL_SIZE_RANGE = [23, 31, 47]
 FALSE_POSITIVE_ERROR = 0.15
-
 MIN_STRUCTURE_COUNT = 5
 # MAX_CLIQUE_DURATION = 0.6
 
-# target generation
-SEMANTIC_LABEL_DIC = {
+# boundary tuning
+CHORUS_DURATION_SINGLE = 30.0
+CHORUS_DURATION = 10.0
+TUNE_SCOPE = 6.0
+TUNE_WINDOW = 6.0
+
+
+# ssm target generation (label index)
+DATASET_LABEL_DIC = USING_DATASET.getLabelDic()
+SSM_SEMANTIC_LABEL_DIC = USING_DATASET.semanticLabelDic()
+SSM_BACKGROUND_INDEX = len(set(SSM_SEMANTIC_LABEL_DIC.values()))
+# melody target generation (label index)
+MEL_SEMANTIC_LABEL_DIC = {
     "chorus": 1,
     "verse": 2,
 }
-BACKGROUND_INDEX = 0
+MEL_BACKGROUND_INDEX = 0
 
 # Chorus classifier
 CLF_SPLIT_RATIO = 0.8

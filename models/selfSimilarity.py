@@ -70,13 +70,12 @@ def selfSimilarityMatrix(
     # melody
     if mel is not None:
         _, pitches = mel
-        n_seq = 5
-        pitches = pitchChroma(pitches, n_seq=n_seq)
+        pitches = pitchChroma(pitches)
         WPitches = feature2W(
             pitches,
             size,
             np.mean,
-            getShiftInvariantCSM(getCSM, wins_per_block, n_seq=n_seq),
+            getShiftInvariantCSM(getCSM, wins_per_block, n_seq=PITCH_CHROMA_SEQ),
             wins_per_block=wins_per_block,
         )
         printArray(WPitches, "pitchChroma")
@@ -99,9 +98,16 @@ def selfSimilarityMatrix(
     return res
 
 
-def pitchChroma(pitches, n_class=24, n_step=10, n_seq=5):
+def pitchChroma(
+    pitches,
+    n_class=PITCH_CHROMA_CLASS,
+    n_step=PITCH_CHROMA_STEP,
+    n_seq=PITCH_CHROMA_SEQ,
+):
     """input: [t]
-    output: [n_class*n_seq, t]"""
+    output: [n_class*n_seq, t]
+    n_step is counting window size
+    n_seq is counting window number"""
     pitches = deepcopy(pitches)
     size = pitches.shape[-1]
     nonVoice = pitches <= 0  # whether it's a voicing frame

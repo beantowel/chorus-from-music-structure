@@ -36,11 +36,12 @@ algo_order = [
     "seqRecurS",
     "olda",
     "highlighter",
-    "refraiD",
+    # "refraiD",
     "scluster",
     "sf",
     "cnmf",
     "foote",
+    "gtBoundary",
 ]
 algo_order += [
     "seqRecur+",
@@ -49,7 +50,6 @@ algo_order += [
     "sf+",
     "cnmf+",
     "foote+",
-    "gtBoundary",
 ]
 loader_views = {
     "_VAL": CLF_VAL_SET,
@@ -120,7 +120,7 @@ def main(force, dataset, algorithm):
         evalAlgos = {algorithm: algos[algorithm]}
 
     for dName, loader in evalLoader.items():
-        logger.info("----------------------------------------------------------")
+        logger.info("-----------------------eval_algos---------------------------")
         logger.info(f"processing datasetloader, name={dName}")
         saver = Metrics_Saver(dName)
         # run incremental evaluation by default

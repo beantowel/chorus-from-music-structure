@@ -110,8 +110,8 @@ class ExtractMel(BaseTransform):
         intervals, labels = sample["gt"]
         size = len(times)
         # generate target labels
-        target = np.full((size,), BACKGROUND_INDEX)
-        for fun, idx in SEMANTIC_LABEL_DIC.items():
+        target = np.full((size,), MEL_BACKGROUND_INDEX)
+        for fun, idx in MEL_SEMANTIC_LABEL_DIC.items():
             ef = extractFunctions(labels, [fun])
             for intv in intervals[ef == fun]:
                 lower = np.searchsorted(times, intv[0])
