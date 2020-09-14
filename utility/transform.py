@@ -10,8 +10,11 @@ from models.selfSimilarity import selfSimilarityMatrix
 from models.seqRecur import cliquesFromSSM
 from utility.common import extractFunctions, cliqueGroups, logSSM
 from utility.dataset import Preprocess_Dataset
-from configs.modelConfigs import *
-from configs.configs import *
+from configs.modelConfigs import (CLI_TRANSFORM_IDENTIFIER, DATASET_LABEL_DIC, MEL_BACKGROUND_INDEX,
+                                  MEL_SEMANTIC_LABEL_DIC, MEL_TRANSFORM_IDENTIFIER, SAMPLE_RATE,
+                                  SSM_BACKGROUND_INDEX, SSM_FEATURES, SSM_SEMANTIC_LABEL_DIC,
+                                  SSM_TRANSFORM_IDENTIFIER, SSM_USING_MELODY, USING_DATASET)
+from configs.configs import ALGO_BASE_DIRS
 
 
 class BaseTransform:

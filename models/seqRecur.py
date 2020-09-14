@@ -7,8 +7,10 @@ from scipy.sparse.csgraph import floyd_warshall
 from sklearn.cluster import AffinityPropagation
 import matplotlib.pyplot as plt
 
-from utility.common import *
-from configs.modelConfigs import *
+from utility.common import cliquesFromArr, filteredCliqueEnds, getLabeledSSM, printArray
+from configs.modelConfigs import (ADJACENT_DELTA_DISTANCE, DELTA_DIS_RANGE, EPSILON,
+                                  FALSE_POSITIVE_ERROR, MIN_STRUCTURE_COUNT, SMOOTH_KERNEL_SIZE,
+                                  SMOOTH_KERNEL_SIZE_RANGE)
 from configs.configs import DEBUG, logger
 
 

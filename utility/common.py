@@ -3,7 +3,7 @@ from typing import List
 import matplotlib.pyplot as plt
 
 from configs.configs import DEBUG, logger
-from configs.modelConfigs import *
+from configs.modelConfigs import CC_PRECISION, CC_RECALL, EPSILON, MINIMUM_CHORUS_DUR
 from collections import defaultdict
 
 

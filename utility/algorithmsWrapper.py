@@ -3,17 +3,32 @@ import os
 import json
 import subprocess
 import unicodedata
+import librosa
+import numpy as np
 from itertools import chain
 from pychorus import find_and_output_chorus
 from mir_eval.io import load_labeled_intervals
 
-from models.classifier import *
-from models.seqRecur import *
-from models.pickSingle import *
-from utility.dataset import *
-from utility.common import *
-from configs.modelConfigs import *
-from configs.configs import ALGO_BASE_DIRS
+from models.classifier import ChorusClassifier, chorusDetection, getFeatures
+from utility.transform import ExtractCliques, GenerateSSM
+from models.seqRecur import buildRecurrence, smoothCliques
+from models.pickSingle import maxOverlap, tuneIntervals
+from utility.dataset import DATASET_BASE_DIRS, Preprocess_Dataset
+from utility.common import (
+    cliquesFromArr,
+    matchCliqueLabel,
+    matchLabel,
+    singleChorusSection,
+)
+from configs.modelConfigs import (
+    CHORUS_CLASSIFIER_TRAIN_DATA_FILE,
+    CHORUS_DURATION,
+    CHORUS_DURATION_SINGLE,
+    SMOOTH_KERNEL_SIZE,
+    SSM_LOG_THRESH,
+    TUNE_WINDOW,
+)
+from configs.configs import logger, ALGO_BASE_DIRS
 
 
 class AlgoSeqRecur:

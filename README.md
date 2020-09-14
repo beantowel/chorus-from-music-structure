@@ -18,14 +18,14 @@ The algorithm was implemented in `Python 3.7`, the requirements were listed in `
 pip install -r ./requirements.txt
 ```
 
-The **latest** version of `librosa` which has some crucial fixes should be installed via github:
+~~The **latest** version of `librosa` which has some crucial fixes should be installed via github:~~
 
 ```bash
 git clone --depth=1 https://github.com/librosa/librosa.git
 pip install -e librosa
 ```
 
-Download the melody extraction algorithm [JDC](https://github.com/keums/melodyExtraction_JDC):
+Download the melody extraction algorithm [JDC](https://github.com/keums/melodyExtraction_JDC), and configure the path as described in *Configuration*:
 
 ```bash
 git clone --depth=1 https://github.com/keums/melodyExtraction_JDC.git
