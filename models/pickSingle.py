@@ -51,12 +51,17 @@ def arousalPoint(time, times, pitches, window, show=DEBUG):
     scores = [arousalScore(t) for t in times[mask]]
     point = times[mask][np.argmax(scores)]
     if show:
+        pointY = np.max(scores)
+        if np.min(pitches) < 0:
+            pitches = -pitches
+            scores = -np.array(scores)
+            pointY = -pointY
         logger.debug(
             f"point={point} times={times[mask][0]}~{times[mask][-1]} window={window}"
         )
         plt.plot(times[mask], pitches[mask], label="pitch")
         plt.plot(times[mask], scores, label="score")
-        plt.scatter(point, np.max(scores))
+        plt.scatter(point, pointY)
         plt.xlabel("time/s")
         plt.ylabel("freq/Hz")
         plt.legend()

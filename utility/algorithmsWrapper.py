@@ -54,9 +54,10 @@ class AlgoSeqRecurSingle(AlgoSeqRecur):
         mirexFmtSingle = maxOverlap(
             mirexFmt, chorusDur=CHORUS_DURATION_SINGLE, centering=False
         )
-        return tuneIntervals(
+        mirexFmtSingle = tuneIntervals(
             mirexFmtSingle, mels_f, chorusDur=CHORUS_DURATION_SINGLE, window=TUNE_WINDOW
         )
+        return mirexFmtSingle
 
 
 class AlgoSeqRecurBound:
@@ -64,12 +65,15 @@ class AlgoSeqRecurBound:
         self.rawAlgo = AlgoSeqRecur()
 
     def __call__(self, dataset, idx):
-        ssm_f, _ = getFeatures(dataset, idx)
+        ssm_f, mels_f = getFeatures(dataset, idx)
         cliques = self.rawAlgo._process(dataset, idx, ssm_f)
 
         times = ssm_f[0]
         intervals = np.array([(times[i], times[i + 1]) for i in range(len(times) - 1)])
         mirexFmt = matchCliqueLabel(intervals, cliques, dataset[idx]["gt"])
+        mirexFmt = tuneIntervals(
+            mirexFmt, mels_f, chorusDur=CHORUS_DURATION, window=TUNE_WINDOW
+        )
         return mirexFmt
 
 
