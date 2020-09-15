@@ -10,10 +10,18 @@ from models.selfSimilarity import selfSimilarityMatrix
 from models.seqRecur import cliquesFromSSM
 from utility.common import extractFunctions, cliqueGroups, logSSM
 from utility.dataset import Preprocess_Dataset
-from configs.modelConfigs import (CLI_TRANSFORM_IDENTIFIER, DATASET_LABEL_DIC, MEL_BACKGROUND_INDEX,
-                                  MEL_SEMANTIC_LABEL_DIC, MEL_TRANSFORM_IDENTIFIER, SAMPLE_RATE,
-                                  SSM_BACKGROUND_INDEX, SSM_FEATURES, SSM_SEMANTIC_LABEL_DIC,
-                                  SSM_TRANSFORM_IDENTIFIER, SSM_USING_MELODY, USING_DATASET)
+from configs.modelConfigs import (
+    CLI_TRANSFORM_IDENTIFIER,
+    DATASET_LABEL_SET,
+    MEL_SEMANTIC_LABEL_DIC,
+    MEL_TRANSFORM_IDENTIFIER,
+    SAMPLE_RATE,
+    SSM_FEATURES,
+    SSM_SEMANTIC_LABEL_DIC,
+    SSM_TRANSFORM_IDENTIFIER,
+    SSM_USING_MELODY,
+    USING_DATASET,
+)
 from configs.configs import ALGO_BASE_DIRS
 
 
@@ -70,9 +78,9 @@ class GenerateSSM(BaseTransform):
         intervals, labels = sample["gt"]
         # generate target label matrix
         size = ssm.shape[-1]
-        target = np.full((size, size), SSM_BACKGROUND_INDEX)
-        for lab, _ in DATASET_LABEL_DIC.items():
-            intvs = intervals[labels == lab]
+        target = np.full((size, size), SSM_SEMANTIC_LABEL_DIC["background"])
+        for label in DATASET_LABEL_SET:
+            intvs = intervals[labels == label]
             for xbegin, xend in intvs:
                 # left	a[i-1] < v <= a[i]
                 # right	a[i-1] <= v < a[i]
@@ -81,7 +89,9 @@ class GenerateSSM(BaseTransform):
                 for ybegin, yend in intvs:
                     ylower = np.searchsorted(times, ybegin)
                     yhigher = np.searchsorted(times, yend)
-                    target[xlower:xhigher, ylower:yhigher] = SSM_SEMANTIC_LABEL_DIC[lab]
+                    target[xlower:xhigher, ylower:yhigher] = SSM_SEMANTIC_LABEL_DIC[
+                        label
+                    ]
 
         sample["input"] = logSSM(ssm)
         sample["target"] = target
@@ -113,7 +123,7 @@ class ExtractMel(BaseTransform):
         intervals, labels = sample["gt"]
         size = len(times)
         # generate target labels
-        target = np.full((size,), MEL_BACKGROUND_INDEX)
+        target = np.full((size,), MEL_SEMANTIC_LABEL_DIC["background"])
         for fun, idx in MEL_SEMANTIC_LABEL_DIC.items():
             ef = extractFunctions(labels, [fun])
             for intv in intervals[ef == fun]:

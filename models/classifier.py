@@ -7,7 +7,12 @@ from sklearn.ensemble import RandomForestClassifier
 from utility.common import cliqueHeads, cliqueTails, getCliqueLabels
 from utility.transform import getFeatures
 from configs.configs import logger
-from configs.modelConfigs import EPSILON, RD_FOREST_ESTIMATORS, RD_FOREST_RANDOM_STATE
+from configs.modelConfigs import (
+    EPSILON,
+    RD_FOREST_ESTIMATORS,
+    RD_FOREST_RANDOM_STATE,
+    CLF_TARGET_LABEL,
+)
 
 
 def numberCliques(cliques, labels):
@@ -30,7 +35,7 @@ def chorusDetection(cliques, ssm_times, mels_f, clf, single=False):
 
     # assign labels (maximum length=16)
     labels = np.full(len(boundaries) - 1, "others", dtype="U16")
-    labels[indices] = "chorus"
+    labels[indices] = CLF_TARGET_LABEL
     intervals = np.array(
         [(ssm_times[i], ssm_times[j]) for i, j in zip(boundaries[:-1], boundaries[1:])]
     )
@@ -169,7 +174,7 @@ class ChorusClassifier:
     def predict(self, features, single=False):
         if not self.trained:
             self.train()
-        clzIdx = np.nonzero(self.classes_ == "chorus")[0][0]
+        clzIdx = np.nonzero(self.classes_ == CLF_TARGET_LABEL)[0][0]
         probs = self.clf.predict_proba(features)[:, clzIdx]
         if single:
             return [np.argmax(probs)]
@@ -186,7 +191,7 @@ class ChorusClassifier:
             with open(dataFile, "rb") as f:
                 X, y = pickle.load(f)
                 logger.info(f"<{self.__class__.__name__}> load data from '{dataFile}'")
-                logger.info(f'chorus/total={sum(np.array(y)=="chorus")}/{len(y)}')
+                logger.info(f'target(chorus)/total={sum(np.array(y)==CLF_TARGET_LABEL)}/{len(y)}')
         else:
             logger.error(f"build dataset for classifier first")
             raise FileNotFoundError(dataFile)

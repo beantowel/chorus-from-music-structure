@@ -8,7 +8,7 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 from configs.configs import logger, DEBUG, PRED_DIR, VIEWER_DATA_DIR, NUM_WORKERS
-from configs.modelConfigs import SSM_TIME_STEP
+from configs.modelConfigs import SSM_TIME_STEP, CLF_TARGET_LABEL
 from utility.transform import ExtractMel, GenerateSSM, ExtractCliques, getFeatures
 from utility.dataset import DummyDataset, Preprocess_Dataset
 from utility.algorithmsWrapper import AlgoSeqRecur, AlgoSeqRecurSingle
@@ -76,7 +76,7 @@ def drawSegments(ref, est, ssm, times):
         size = ssm.shape[-1]
         intvs, labels = mirexFmt
         labels = extractFunctions(labels)
-        labelClz = np.array([1 if label == "chorus" else 0 for label in labels])
+        labelClz = np.array([1 if label == CLF_TARGET_LABEL else 0 for label in labels])
         intvs = (intvs / times[-1] * size).astype(int)
         for intv, label in zip(intvs, labelClz):
             if up:

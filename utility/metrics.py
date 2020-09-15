@@ -10,7 +10,12 @@ from multiprocessing import Pool
 
 from tqdm import tqdm
 
-from utility.common import extractFunctions, filterIntvs, intervalIntersection, mergeIntervals
+from utility.common import (
+    extractFunctions,
+    filterIntvs,
+    intervalIntersection,
+    mergeIntervals,
+)
 from configs.configs import (
     METRIC_NAMES,
     PLOT_METRIC_FIELDS,
@@ -92,8 +97,8 @@ def chorusOverlapNear(ref, est, beta=1.0):
 
 def chorusOnsetPRF(ref, est):
     ref, est = deepcopy(ref), deepcopy(est)
-    ref = (ref[0], extractFunctions(ref[1], ["chorus", "verse"]))
-    est = (est[0], extractFunctions(est[1], ["chorus", "verse"]))
+    ref = (ref[0], extractFunctions(ref[1]))
+    est = (est[0], extractFunctions(est[1]))
     ref, est = mergeIntervals(ref), mergeIntervals(est)
     ref_intvs, est_intvs = filterIntvs(ref), filterIntvs(est)
 

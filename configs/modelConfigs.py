@@ -1,6 +1,7 @@
 import os
 import numpy as np
 from copy import copy
+from collections import defaultdict
 
 from utility.dataset import RWC_Popular_Dataset, SALAMI_Dataset
 
@@ -52,17 +53,22 @@ TUNE_WINDOW = 6.0
 
 
 # ssm target generation (label index)
-DATASET_LABEL_DIC = USING_DATASET.getLabelDic()
-SSM_SEMANTIC_LABEL_DIC = USING_DATASET.semanticLabelDic()
-SSM_BACKGROUND_INDEX = len(set(SSM_SEMANTIC_LABEL_DIC.values()))
+DATASET_LABEL_SET = USING_DATASET.getLabels()
+SSM_SEMANTIC_LABEL_DIC = defaultdict(int, USING_DATASET.semanticLabelDic())
+assert SSM_SEMANTIC_LABEL_DIC["background"] == 0
 # melody target generation (label index)
-MEL_SEMANTIC_LABEL_DIC = {
-    "chorus": 1,
-    "verse": 2,
-}
-MEL_BACKGROUND_INDEX = 0
+MEL_SEMANTIC_LABEL_DIC = defaultdict(
+    int,
+    {
+        "background": 0,
+        "chorus": 1,
+        "verse": 2,
+    },
+)
 
 # Chorus classifier
+CLF_TARGET_LABEL = "chorus"
+CLF_NON_TARGET_LABEL = "others"
 CLF_SPLIT_RATIO = 0.8
 CLF_TRAIN_SET, CLF_VAL_SET = USING_DATASET.randomSplit(CLF_SPLIT_RATIO, seed=114514)
 CHORUS_CLASSIFIER_TRAIN_DATA_FILE = {

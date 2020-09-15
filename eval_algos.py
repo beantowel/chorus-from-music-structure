@@ -3,12 +3,24 @@ import numpy as np
 import pandas as pd
 
 from utility.dataset import RWC_Popular_Dataset
-from utility.algorithmsWrapper import (AlgoSeqRecur, AlgoSeqRecurBound, AlgoSeqRecurSingle,
-                                       GroudTruthStructure, MsafAlgos, MsafAlgosBdryOnly,
-                                       MsafAlgosBound, PopMusicHighlighter, RefraiD)
+from utility.algorithmsWrapper import (
+    AlgoSeqRecur,
+    AlgoSeqRecurBound,
+    AlgoSeqRecurSingle,
+    GroudTruthStructure,
+    MsafAlgos,
+    MsafAlgosBdryOnly,
+    MsafAlgosBound,
+    PopMusicHighlighter,
+    RefraiD,
+)
 from utility.metrics import AlgoEvaluator, Metrics_Saver
 from configs.configs import EVAL_RESULT_DIR, FORCE_EVAL, METRIC_NAMES, logger
-from configs.modelConfigs import CLF_VAL_SET, CLF_TRAIN_SET, USING_DATASET
+from configs.modelConfigs import (
+    CLF_VAL_SET,
+    CLF_TRAIN_SET,
+    USING_DATASET,
+)
 
 loaders = {
     "RWC_Popular": RWC_Popular_Dataset(),

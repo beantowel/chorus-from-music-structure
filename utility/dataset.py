@@ -23,7 +23,7 @@ class BaseStructDataset:
         self.baseDir = baseDir
         self.transform = transform
         self.pathPairs = []  # <StructDataPathPair> List
-        self.labelDic = None
+        self.labelSet = None
 
     def __len__(self):
         return len(self.pathPairs)
@@ -54,20 +54,21 @@ class BaseStructDataset:
             sample = self.transform(sample)
         return sample
 
-    def getLabelDic(self, refresh=False):
-        if refresh or self.labelDic is None:
+    def getLabels(self, refresh=False):
+        # all distinct labels in the dataset
+        if refresh or self.labelSet is None:
             labelSet = set()
             for pair in self.pathPairs:
                 _, labels = self.loadGT(pair.GT)
                 labelSet = labelSet.union(labels)
             labelSet = sorted(labelSet)
-            self.labelDic = {label: i for i, label in enumerate(labelSet)}
-        return self.labelDic
+        return labelSet
 
     def loadGT(self, GTPath):
         raise NotImplementedError
 
     def semanticLabelDic(self):
+        # custom semantic index for labels in the dataset, 0 IS RESERVED, DO NOT USE!!
         raise NotImplementedError
 
     def randomSplit(self, splitRatio, seed):
@@ -124,21 +125,21 @@ class SALAMI_Dataset(BaseStructDataset):
         # merge <silence> and <Silence>
         labels = ["Silence" if lab == "silence" else lab for lab in labels]
         # remove negative duration intervals
-        posDuration = np.array([intv[1] - intv[0] > 0 for intv in intervals])
-        intervals = intervals[posDuration]
-        labels = np.array(labels)[posDuration]
+        positiveIntv = np.array([intv[1] - intv[0] > 0 for intv in intervals])
+        intervals = intervals[positiveIntv]
+        labels = np.array(labels)[positiveIntv]
         return intervals, labels
 
     def addPath(self, GTPath, title, wavPath):
         if os.path.exists(GTPath):
-            intervals, labels = self.loadGT(GTPath)
+            _, labels = self.loadGT(GTPath)
             if "Chorus" in labels:
                 self.pathPairs.append(StructDataPathPair(title, wavPath, GTPath))
 
     def semanticLabelDic(self):
         if self.annotation == "functions":
             dic = {
-                "&pause": 0,
+                "&pause": 33,
                 "Bridge": 1,
                 "Chorus": 2,
                 "Coda": 3,
@@ -174,59 +175,59 @@ class SALAMI_Dataset(BaseStructDataset):
             }
         elif self.annotation == "uppercase":
             dic = {
-                "A": 0,
-                "B": 0,
-                "C": 0,
-                "D": 0,
-                "E": 0,
-                "F": 0,
-                "G": 0,
-                "H": 0,
-                "I": 0,
-                "J": 0,
-                "K": 0,
-                "L": 0,
-                "M": 0,
-                "N": 0,
-                "O": 0,
-                "Q": 0,
-                "R": 0,
-                "S": 0,
+                "A": 2,
+                "B": 2,
+                "C": 2,
+                "D": 2,
+                "E": 2,
+                "F": 2,
+                "G": 2,
+                "H": 2,
+                "I": 2,
+                "J": 2,
+                "K": 2,
+                "L": 2,
+                "M": 2,
+                "N": 2,
+                "O": 2,
+                "Q": 2,
+                "R": 2,
+                "S": 2,
                 "Silence": 1,
-                "T": 0,
-                "U": 0,
-                "Y": 0,
-                "Z": 0,
+                "T": 2,
+                "U": 2,
+                "Y": 2,
+                "Z": 2,
             }
         elif self.annotation == "lowercase":
             dic = {
                 "Silence": 1,
-                "a": 0,
-                "b": 0,
-                "c": 0,
-                "d": 0,
-                "e": 0,
-                "f": 0,
-                "g": 0,
-                "h": 0,
-                "i": 0,
-                "j": 0,
-                "k": 0,
-                "l": 0,
-                "m": 0,
-                "n": 0,
-                "o": 0,
-                "p": 0,
-                "q": 0,
-                "r": 0,
-                "s": 0,
-                "t": 0,
-                "u": 0,
-                "v": 0,
-                "w": 0,
-                "x": 0,
-                "y": 0,
-                "z": 0,
+                "a": 2,
+                "b": 2,
+                "c": 2,
+                "d": 2,
+                "e": 2,
+                "f": 2,
+                "g": 2,
+                "h": 2,
+                "i": 2,
+                "j": 2,
+                "k": 2,
+                "l": 2,
+                "m": 2,
+                "n": 2,
+                "o": 2,
+                "p": 2,
+                "q": 2,
+                "r": 2,
+                "s": 2,
+                "t": 2,
+                "u": 2,
+                "v": 2,
+                "w": 2,
+                "x": 2,
+                "y": 2,
+                "z": 2,
             }
         return dic
 
@@ -273,19 +274,19 @@ class RWC_Popular_Dataset(BaseStructDataset):
 
     def semanticLabelDic(self):
         dic = {
-            "bridge A": 0,
-            "bridge B": 0,
-            "bridge C": 0,
-            "bridge D": 0,
+            "bridge A": 3,
+            "bridge B": 3,
+            "bridge C": 3,
+            "bridge D": 3,
             "chorus A": 1,
             "chorus B": 1,
             "chorus C": 1,
             "chorus D": 1,
-            "ending": 0,
-            "intro": 0,
-            "nothing": 0,
-            "post-chorus": 0,
-            "pre-chorus": 0,
+            "ending": 3,
+            "intro": 3,
+            "nothing": 3,
+            "post-chorus": 3,
+            "pre-chorus": 3,
             "verse A": 2,
             "verse B": 2,
             "verse C": 2,

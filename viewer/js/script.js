@@ -53,7 +53,7 @@ function cleanButtons(id) {
 }
 
 function buttonClz(label) {
-    if (label.toLowerCase().startsWith('chorus')) {
+    if (label.toLowerCase().startsWith("chorus")) {
         return 'button button2';
     } else {
         return 'button button1';

@@ -2,7 +2,12 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 from configs.configs import logger, DEBUG
-from configs.modelConfigs import CHORUS_DURATION_SINGLE, CHORUS_DURATION, TUNE_SCOPE
+from configs.modelConfigs import (
+    CHORUS_DURATION_SINGLE,
+    CHORUS_DURATION,
+    TUNE_SCOPE,
+    CLF_TARGET_LABEL,
+)
 from utility.common import (
     mergeIntervals,
     intervalIntersection,
@@ -14,7 +19,7 @@ from utility.common import (
 
 def maxOverlap(mirexFmt, chorusDur=CHORUS_DURATION_SINGLE, centering=False):
     intervals, labels = mergeIntervals(mirexFmt)
-    chorusIndices = np.nonzero(np.char.startswith(labels, "chorus"))[0]
+    chorusIndices = np.nonzero(np.char.startswith(labels, CLF_TARGET_LABEL))[0]
     dur = intervals[-1][1]
 
     chorusIntsec = (
@@ -72,7 +77,7 @@ def arousalPoint(time, times, pitches, window, show=DEBUG):
 def tuneIntervals(mirexFmt, mels_f, chorusDur, window):
     mirexFmt = mergeIntervals(mirexFmt)
     dur = mirexFmt[0][-1][1]
-    intvs = filterIntvs(mirexFmt, fun="chorus")
+    intvs = filterIntvs(mirexFmt, fun=CLF_TARGET_LABEL)
     tuneIntvs = []
     times, pitches = mels_f
     for intv in intvs:

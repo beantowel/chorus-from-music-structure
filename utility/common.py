@@ -3,7 +3,14 @@ from typing import List
 import matplotlib.pyplot as plt
 
 from configs.configs import DEBUG, logger
-from configs.modelConfigs import CC_PRECISION, CC_RECALL, EPSILON, MINIMUM_CHORUS_DUR
+from configs.modelConfigs import (
+    CC_PRECISION,
+    CC_RECALL,
+    EPSILON,
+    MINIMUM_CHORUS_DUR,
+    CLF_TARGET_LABEL,
+    CLF_NON_TARGET_LABEL,
+)
 from collections import defaultdict
 
 
@@ -53,7 +60,7 @@ def intervalIntersection(intv0, intv1):
     return x
 
 
-def filterIntvs(mirexFmt, fun="chorus"):
+def filterIntvs(mirexFmt, fun=CLF_TARGET_LABEL):
     intvs, labels = mirexFmt
     labels = extractFunctions(labels, [fun])
     intvs = intvs[labels == fun]
@@ -75,7 +82,9 @@ def mergeIntervals(mirexFmt):
     return (new_intervals, new_labels)
 
 
-def extractFunctions(labels: np.ndarray, funs: List[str] = ["chorus"]) -> np.ndarray:
+def extractFunctions(
+    labels: np.ndarray, funs: List[str] = [CLF_TARGET_LABEL]
+) -> np.ndarray:
     newLabels = []
     for label in labels:
         # if label startswith any functional string
@@ -100,13 +109,13 @@ def matchLabel(est_intvs, gt):
                 intersec >= est_dur / 2,
             ]
         )
-        label = "chorus" if predicate else "others"
+        label = CLF_TARGET_LABEL if predicate else CLF_NON_TARGET_LABEL
         gt_est_labels.append(label)
     return np.array(gt_est_labels)
 
 
 def matchCliqueLabel(intervals, cliques, gt):
-    labels = np.full(intervals.shape[0], "others", dtype="U16")
+    labels = np.full(intervals.shape[0], CLF_NON_TARGET_LABEL, dtype="U16")
     clabels = getCliqueLabels(gt, cliques, intervals)
     for c, l in zip(cliques, clabels):
         for i in c:
@@ -149,8 +158,8 @@ def getCliqueLabels(gt, cliques, intervals):
             ]
         )
         # ml = matchLabel(cintvs, gt)
-        # predicate = sum(ml == 'chorus') >= len(ml) * 0.5
-        label = "chorus" if predicate else "others"
+        # predicate = sum(ml == CLF_TARGET_LABEL) >= len(ml) * 0.5
+        label = CLF_TARGET_LABEL if predicate else CLF_NON_TARGET_LABEL
         cliqueLabels.append(label)
     return cliqueLabels
 
@@ -200,7 +209,7 @@ def expSSM(ssm, inplace=True):
 def singleChorusSection(begin, end, dur):
     intervals = np.array([(0, begin), (begin, end), (end, dur)])
     labels = np.array(
-        ["others", "chorus", "others"],
+        [CLF_NON_TARGET_LABEL, CLF_TARGET_LABEL, CLF_NON_TARGET_LABEL],
         dtype="U16",
     )
     return (intervals, labels)
@@ -215,7 +224,7 @@ def multiChorusSections(intvs, dur):
     for intv in intvs:
         boundaries[key(intv[0])] += 1
         boundaries[key(intv[1])] -= 1
-    intervals, labels = [[0, 0]], ["others"]
+    intervals, labels = [[0, 0]], [CLF_NON_TARGET_LABEL]
     state = 0  # 0:others >0:chorus
     for bdr in sorted(boundaries.keys()):
         t = bdr / 100.0
@@ -223,9 +232,9 @@ def multiChorusSections(intvs, dur):
         intervals.append([t, 0])
         state += boundaries[bdr]
         if state == 0:
-            labels.append("others")
+            labels.append(CLF_NON_TARGET_LABEL)
         elif state > 0:
-            labels.append("chorus")
+            labels.append(CLF_TARGET_LABEL)
         else:
             logger.error(f"invalid state, boundaries={boundaries}")
     intervals[-1][1] = dur
