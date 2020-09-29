@@ -2,7 +2,7 @@ import click
 import numpy as np
 import pandas as pd
 
-from utility.dataset import RWC_Popular_Dataset
+from utility.dataset import RWC_Popular_Dataset, CCM_Dataset
 from utility.algorithmsWrapper import (
     AlgoSeqRecur,
     AlgoSeqRecurBound,
@@ -24,6 +24,7 @@ from configs.modelConfigs import (
 
 loaders = {
     "RWC_Popular": RWC_Popular_Dataset(),
+    "CCM": CCM_Dataset(),
     # 'SALAMI_functions': SALAMI_Dataset(annotation='functions'),
 }
 algos = {
@@ -56,14 +57,14 @@ algo_order = [
     "foote",
     "gtBoundary",
 ]
-algo_order += [
-    "seqRecur+",
-    "olda+",
-    "scluster+",
-    "sf+",
-    "cnmf+",
-    "foote+",
-]
+# algo_order += [
+#     "seqRecur+",
+#     "olda+",
+#     "scluster+",
+#     "sf+",
+#     "cnmf+",
+#     "foote+",
+# ]
 loader_views = {
     "_VAL": CLF_VAL_SET,
     "_TRAIN": CLF_TRAIN_SET,

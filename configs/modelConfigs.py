@@ -3,10 +3,12 @@ import numpy as np
 from copy import copy
 from collections import defaultdict
 
-from utility.dataset import RWC_Popular_Dataset, SALAMI_Dataset
+from utility.dataset import RWC_Popular_Dataset, SALAMI_Dataset, CCM_Dataset
 
 # USING_DATASET = SALAMI_Dataset(annotation='functions')
-USING_DATASET = RWC_Popular_Dataset()
+# USING_DATASET = RWC_Popular_Dataset()
+USING_DATASET = CCM_Dataset()
+
 
 # preprocess transforms
 SSM_USING_MELODY = True

@@ -104,17 +104,20 @@ class SALAMI_Dataset(BaseStructDataset):
 
         for filename in sorted(os.listdir(os.path.join(baseDir, "collections"))):
             title = os.path.splitext(filename)[0]
-            wavPath = os.path.join(baseDir, "collections", title + ".mp3")
+            assert (
+                os.path.splitext(filename)[1] == ".mp3"
+            ), f"{filename}: wrong extension"
+            wavPath = os.path.join(baseDir, "collections", filename)
             GTPath = os.path.join(
                 baseDir, "annotations", title, "parsed", f"textfile1_{annotation}.txt"
             )
             GTPath2 = os.path.join(
                 baseDir, "annotations", title, "parsed", f"textfile2_{annotation}.txt"
             )
-            self.addPath(GTPath, title, wavPath)
+            self._addPath(GTPath, title, wavPath)
             # consider both annotation as ground truth, even they conflict with each other sometimes (around 50%!)
             if not singleAnnt:
-                self.addPath(GTPath2, title, wavPath)
+                self._addPath(GTPath2, title, wavPath)
 
     def loadGT(self, GTPath):
         """load melody ground truth"""
@@ -130,7 +133,7 @@ class SALAMI_Dataset(BaseStructDataset):
         labels = np.array(labels)[positiveIntv]
         return intervals, labels
 
-    def addPath(self, GTPath, title, wavPath):
+    def _addPath(self, GTPath, title, wavPath):
         if os.path.exists(GTPath):
             _, labels = self.loadGT(GTPath)
             if "Chorus" in labels:
@@ -237,15 +240,15 @@ class RWC_Popular_Dataset(BaseStructDataset):
 
     def __init__(self, baseDir=DATASET_BASE_DIRS["RWC"], transform=None):
         super(RWC_Popular_Dataset, self).__init__(baseDir, transform)
-        # RWC-MDB-P-2001/AIST.RWC-MDB-P-2001.MELODY/RM-P<Num:03d>.MELODY.TXT
+        # RWC-MDB-P-2001/AIST.RWC-MDB-P-2001.CHORUS/RM-P<Num:03d>.CHORUS.TXT
         # RWC-MDB-P-2001/RWC研究用音楽データベース[| Disc <Id>]/<Num':02d> <title>.wav
         discPaths = [os.path.join(baseDir, "RWC-MDB-P-2001", "RWC研究用音楽データベース")]
         for Id in range(2, 8):
             dp = os.path.join(baseDir, "RWC-MDB-P-2001", f"RWC研究用音楽データベース Disc {Id}")
             discPaths.append(dp)
-        self.addPairFromPaths(discPaths, "P")
+        self._addPairFromPaths(discPaths, "P")
 
-    def addPairFromPaths(self, discPaths, X):
+    def _addPairFromPaths(self, discPaths, X):
         def listDisc(discPath):
             # ensure the wav files are well-ordered, or GTfile will mismatch
             names = sorted(os.listdir(discPath))
@@ -290,6 +293,80 @@ class RWC_Popular_Dataset(BaseStructDataset):
             "verse A": 2,
             "verse B": 2,
             "verse C": 2,
+        }
+        return dic
+
+
+class CCM_Dataset(BaseStructDataset):
+    """Dataset built by China Conservatory of Music"""
+
+    def __init__(self, baseDir=DATASET_BASE_DIRS["CCM"], transform=None):
+        super(CCM_Dataset, self).__init__(baseDir, transform)
+        # chorus/<title>.txt
+        # audio/<title>.mp3
+        for filename in sorted(os.listdir(os.path.join(baseDir, "audio"))):
+            title = os.path.splitext(filename)[0]
+            assert os.path.splitext(filename)[1] in [
+                ".mp3",
+                ".flac",
+            ], f"{filename}: wrong extension"
+            wavPath = os.path.join(baseDir, "audio", filename)
+            GTPath = os.path.join(baseDir, "chorus", title + ".txt")
+            NFDTitle = unicodedata.normalize("NFD", title)
+            if NFDTitle != title:
+                logger.warn(
+                    f"filename={wavPath} is not in unicode NFD form, expected={NFDTitle}"
+                )
+            self.pathPairs.append(StructDataPathPair(title, wavPath, GTPath))
+
+    def loadGT(self, GTPath):
+        intervals, labels = load_labeled_intervals(GTPath, delimiter="\t")
+        labels = np.array([label.strip('"') for label in labels])
+        intervals = intervals / 100.0
+        return intervals, labels
+
+    def semanticLabelDic(self):
+        dic = {
+            "Bridge": 3,
+            "Bridge 1": 3,
+            "Bridge 2": 3,
+            "Bridge A": 3,
+            "Chorus": 1,
+            "Chorus A": 1,
+            "Chorus B": 1,
+            "Chorus C": 1,
+            "Chorus D": 1,
+            "Chorus E": 1,
+            "Chorus F": 1,
+            "Chorus G": 1,
+            "Chorus H": 1,
+            "Chorus I": 1,
+            "Ending": 3,
+            "Interlude": 3,
+            "Interlude A": 3,
+            "Interlude B": 3,
+            "Intro": 3,
+            "Ore-chorus B": 3,
+            "Post-chorus A": 3,
+            "Post-chorus B": 3,
+            "Pre-chorus A": 3,
+            "Pre-chorus B": 3,
+            "Pre-chorus C": 3,
+            "Re-intro": 3,
+            "Re-intro A": 3,
+            "Re-intro B": 3,
+            "Re-intro C": 3,
+            "Reintro": 3,
+            "Verse": 2,
+            "Verse A": 2,
+            "Verse B": 2,
+            "Verse C": 2,
+            "Verse D": 2,
+            "Verse D(Ending)": 2,
+            "Verse E": 2,
+            "Verse F": 2,
+            "bridge": 3,
+            "interlude B": 3,
         }
         return dic
 
