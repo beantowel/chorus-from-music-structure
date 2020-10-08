@@ -20,6 +20,8 @@ from configs.modelConfigs import (
     CLF_VAL_SET,
     CLF_TRAIN_SET,
     USING_DATASET,
+    CLF_SPLIT_RATIO,
+    RANDOM_SEED,
 )
 
 loaders = {
@@ -65,10 +67,6 @@ algo_order = [
 #     "cnmf+",
 #     "foote+",
 # ]
-loader_views = {
-    "_VAL": CLF_VAL_SET,
-    "_TRAIN": CLF_TRAIN_SET,
-}
 
 
 def printResult(aName, metrics):
@@ -83,7 +81,12 @@ def dumpResult(saver):
     saver.saveViolinPlot(EVAL_RESULT_DIR, order=algo_order)
 
 
-def updateViews(evalAlgos):
+def updateViews(evalAlgos, dName):
+    train, val = loaders[dName].randomSplit(CLF_SPLIT_RATIO, seed=RANDOM_SEED)
+    loader_views = {
+        "_VAL": val,
+        "_TRAIN": train,
+    }
     for vName, vLoader in loader_views.items():
         for dName, dLoader in loaders.items():
             if vLoader.__class__ is dLoader.__class__:
@@ -162,7 +165,7 @@ def main(force, dataset, algorithm):
             else:
                 logger.info(f"!! skipping algo, name={aName}")
         dumpResult(saver)
-    updateViews(evalAlgos)
+        updateViews(evalAlgos, dName)
 
 
 if __name__ == "__main__":

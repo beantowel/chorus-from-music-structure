@@ -72,7 +72,10 @@ MEL_SEMANTIC_LABEL_DIC = defaultdict(
 CLF_TARGET_LABEL = "chorus"
 CLF_NON_TARGET_LABEL = "others"
 CLF_SPLIT_RATIO = 0.8
-CLF_TRAIN_SET, CLF_VAL_SET = USING_DATASET.randomSplit(CLF_SPLIT_RATIO, seed=114514)
+RANDOM_SEED = 114514
+CLF_TRAIN_SET, CLF_VAL_SET = USING_DATASET.randomSplit(
+    CLF_SPLIT_RATIO, seed=RANDOM_SEED
+)
 CHORUS_CLASSIFIER_TRAIN_DATA_FILE = {
     "seqRecur": f"data/models/{USING_DATASET.__class__.__name__}_tf{SSM_TRANSFORM_IDENTIFIER}_seqRecur_TRAIN.pkl",
     "scluster": f"data/models/{USING_DATASET.__class__.__name__}_scluster_TRAIN.pkl",

@@ -12,7 +12,7 @@ ALGO_BASE_DIRS = {
 DATASET_BASE_DIRS = {
     "SALAMI": f"{SA_HOME}/dataset/salami",
     "RWC": f"{SA_HOME}/dataset/RWC",
-    "CCM": f"{SA_HOME}/dataset/CCM_Chorus",
+    "CCM": f"{SA_HOME}/dataset/CCM_Structure",
     "LocalTemporary_Dataset": f"{SA_HOME}/dataset/localTmp",
 }
 # output data location
