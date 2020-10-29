@@ -6,7 +6,12 @@ from copy import deepcopy
 from utility.GraphDitty.CSMSSMTools import getCSM, getCSMCosine, getShiftInvariantCSM
 from utility.GraphDitty.SimilarityFusion import doSimilarityFusionWs, getW
 from utility.common import logSSM, printArray
-from configs.modelConfigs import PITCH_CHROMA_CLASS, PITCH_CHROMA_SEQ, PITCH_CHROMA_STEP, REC_SMOOTH
+from configs.modelConfigs import (
+    PITCH_CHROMA_CLASS,
+    PITCH_CHROMA_SEQ,
+    PITCH_CHROMA_STEP,
+    REC_SMOOTH,
+)
 from configs.configs import logger
 
 

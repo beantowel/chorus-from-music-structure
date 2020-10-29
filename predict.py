@@ -24,7 +24,10 @@ def plotMats(matrices, titles, show=DEBUG):
         _, axis = plt.subplots(2, (len(matrices) + 1) // 2)
     else:
         _, axis = plt.subplots(1, len(matrices))
+    if len(matrices) == 1:
+        axis = np.array([axis])
     axis = axis.flatten()
+    print(f"axis:{axis}")
     for i, mat in enumerate(matrices):
         logger.debug(f"{titles[i]}{mat.shape}, min={np.min(mat)}, max={np.max(mat)}")
         ax = axis[i]
