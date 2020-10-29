@@ -67,19 +67,18 @@ def testCCDataset(method):
 # build Preprocess Dataset for feature extraction
 transforms = [
     # ExtractMel(),
-    # GenerateSSM(),
+    GenerateSSM(),
     ExtractCliques(),
 ]
 methods = {
     "seqRecur": GetAlgoData(AlgoSeqRecur()),
     "seqRecurS": GetAlgoData(AlgoSeqRecurSingle()),
-    # 'scluster': GetAlgoData(MsafAlgos('scluster')),
-    # 'cnmf': GetAlgoData(MsafAlgos('cnmf')),
-    # 'sf': GetAlgoData(MsafAlgosBdryOnly('sf')),
-    # 'olda': GetAlgoData(MsafAlgosBdryOnly('olda')),
-    # 'foote': GetAlgoData(MsafAlgosBdryOnly('foote')),
-    # 'gt': GetAlgoData(GroudTruthStructure()),
-    # 'vmo': GetAlgoData(MsafAlgos('vmo')),
+    # "scluster": GetAlgoData(MsafAlgos("scluster")),
+    # "cnmf": GetAlgoData(MsafAlgos("cnmf")),
+    # "sf": GetAlgoData(MsafAlgosBdryOnly("sf")),
+    # "olda": GetAlgoData(MsafAlgosBdryOnly("olda")),
+    # "foote": GetAlgoData(MsafAlgosBdryOnly("foote")),
+    # "gt": GetAlgoData(GroudTruthStructure()),
 }
 
 if __name__ == "__main__":

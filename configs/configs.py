@@ -4,13 +4,13 @@ SA_HOME = os.environ["HOME"] + "/FDU/MIR"
 # dependency location and location to store temporary files running the dependencies
 ALGO_BASE_DIRS = {
     "JDC": f"{SA_HOME}/Projects/melodyExtraction_JDC",
-    "PopMusicHighlighter": f"{SA_HOME}/Projects/results_of_highlighter_on_RWC",
+    "PopMusicHighlighter": f"{SA_HOME}/Projects/results_of_highlighter",
     "TmpDir": "/tmp/MIR",
 }
 # dataset location and preprocess cache files location
 DATASET_BASE_DIRS = {
     "SALAMI": f"{SA_HOME}/dataset/salami",
-    "RWC": f"{SA_HOME}/dataset/melodyExtraction/RWC",
+    "RWC": f"{SA_HOME}/dataset/RWC",
     "LocalTemporary_Dataset": f"{SA_HOME}/dataset/localTmp",
 }
 # output data location
@@ -26,7 +26,7 @@ mk_dirs = [
     PRED_DIR,
     ALGO_BASE_DIRS["TmpDir"],
     DATASET_BASE_DIRS["LocalTemporary_Dataset"],
-    os.path.join(DATASET_BASE_DIRS["SALAMI"], "features"),
+    # os.path.join(DATASET_BASE_DIRS["SALAMI"], "features"),
     os.path.join(DATASET_BASE_DIRS["RWC"], "RWC-MDB-P-2001/features"),
 ]
 for path in mk_dirs:

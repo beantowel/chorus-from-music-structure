@@ -151,13 +151,14 @@ class Metrics_Saver:
     def getResult(self, algoName, titles=None):
         try:
             idx = self.algoNames.index(algoName)
-            metrics = self.metricsList[idx]
-            _titles = self.titlesList[idx]
-            titles = _titles if titles is None else titles
-            res = [metrics[_titles.index(title)] for title in titles]
-            return np.array(res), titles
         except ValueError:
             print(f"{algoName} results not found in {self.datasetName}")
+            return None
+        metrics = self.metricsList[idx]
+        _titles = self.titlesList[idx]
+        titles = _titles if titles is None else titles
+        res = [metrics[_titles.index(title)] for title in titles]
+        return np.array(res), titles
 
     def writeFullResults(self, dirname):
         fullOutputFile = os.path.join(dirname, f"{self.datasetName}_full.csv")

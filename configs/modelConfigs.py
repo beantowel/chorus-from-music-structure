@@ -12,7 +12,7 @@ warnings.filterwarnings("ignore", ".*output shape of zoom.*")
 USING_DATASET = RWC_Popular_Dataset()
 
 # preprocess transforms
-SSM_USING_MELODY = True
+SSM_USING_MELODY = [True, False][1]
 # <without-melody>:11 <with-melody>:12 <melody-only>:13
 SSM_TRANSFORM_IDENTIFIER = 11 if not SSM_USING_MELODY else 12
 MEL_TRANSFORM_IDENTIFIER = 8
@@ -27,7 +27,11 @@ SSM_SEMANTIC_LABEL_DIC = USING_DATASET.semanticLabelDic()
 SSM_BACKGROUND_INDEX = len(set(SSM_SEMANTIC_LABEL_DIC.values()))
 SAMPLE_RATE = 22050
 SSM_TIME_STEP = 1 / SAMPLE_RATE * 512 * 10  # GraphDitty hop=512, win_fac=10
-SSM_FEATURES = {11: ["Fused"], 12: ["Fused"], 13: ["Melody"],}[SSM_TRANSFORM_IDENTIFIER]
+SSM_FEATURES = {
+    11: ["Fused"],
+    12: ["Fused"],
+    13: ["Melody"],
+}[SSM_TRANSFORM_IDENTIFIER]
 
 # ssm Peak algorithm
 PEAK_DISTANCE_LIST = [15, 15]
