@@ -2,7 +2,7 @@ import click
 import numpy as np
 import pandas as pd
 
-from utility.dataset import RWC_Popular_Dataset, CCM_Dataset
+from utility.dataset import RWC_Popular_Dataset, CCM_Dataset, RWC_Popular_Dataset_accomp
 from utility.algorithmsWrapper import (
     AlgoSeqRecur,
     AlgoSeqRecurBound,
@@ -27,6 +27,7 @@ from configs.modelConfigs import (
 loaders = {
     "RWC_Popular": RWC_Popular_Dataset(),
     "CCM": CCM_Dataset(),
+    "RWC_Popular_accomp": RWC_Popular_Dataset_accomp(),
     # 'SALAMI_functions': SALAMI_Dataset(annotation='functions'),
 }
 algos = {

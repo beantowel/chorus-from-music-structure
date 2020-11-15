@@ -1,6 +1,6 @@
 import numpy as np
-from typing import List
 import matplotlib.pyplot as plt
+from typing import List
 
 from configs.configs import DEBUG, logger
 from configs.modelConfigs import (

@@ -18,6 +18,17 @@ from configs.configs import DATASET_BASE_DIRS, NUM_WORKERS, logger
 StructDataPathPair = namedtuple("StructDataPathPair", "title wav GT")
 
 
+def convertFileName(basedir, norm="NFD"):
+    files = os.listdir(basedir)
+    for fileName in files:
+        normalName = unicodedata.normalize(norm, fileName)
+        src = os.path.join(basedir, fileName)
+        dst = os.path.join(basedir, normalName)
+        if src != dst:
+            os.rename(src, dst)
+            logger.info(f"rename, src='{src}' dst='{dst}'")
+
+
 class BaseStructDataset:
     def __init__(self, baseDir, transform):
         self.baseDir = baseDir
@@ -295,6 +306,24 @@ class RWC_Popular_Dataset(BaseStructDataset):
             "verse C": 2,
         }
         return dic
+
+
+class RWC_Popular_Dataset_accomp(RWC_Popular_Dataset):
+    def __init__(self, accompDir=DATASET_BASE_DIRS["RWC_accomp"], transform=None):
+        super(RWC_Popular_Dataset_accomp, self).__init__(transform=transform)
+        convertFileName(accompDir)
+        self.accompDir = accompDir
+        newPathPairs = []
+        for pair in self.pathPairs:
+            title = pair.title
+            gt = pair.GT
+            accomp = os.path.join(accompDir, title, "accompaniment.wav")
+            wav = os.path.join(accompDir, title, f"{title}.wav")
+            if os.path.exists(accomp):
+                os.rename(accomp, wav)
+                logger.warn(f"rename {accomp} -> {wav}")
+            newPathPairs.append(StructDataPathPair(title, wav, gt))
+        self.pathPairs = newPathPairs
 
 
 class CCM_Dataset(BaseStructDataset):

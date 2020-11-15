@@ -22,7 +22,7 @@ from configs.modelConfigs import (
     SSM_USING_MELODY,
     USING_DATASET,
 )
-from configs.configs import ALGO_BASE_DIRS
+from configs.configs import logger, ALGO_BASE_DIRS
 
 
 class BaseTransform:

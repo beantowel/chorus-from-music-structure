@@ -2,7 +2,6 @@ import msaf
 import os
 import json
 import subprocess
-import unicodedata
 import librosa
 import numpy as np
 from itertools import chain
@@ -13,7 +12,7 @@ from models.classifier import ChorusClassifier, chorusDetection, getFeatures
 from utility.transform import ExtractCliques, GenerateSSM
 from models.seqRecur import buildRecurrence, smoothCliques
 from models.pickSingle import maxOverlap, tuneIntervals
-from utility.dataset import DATASET_BASE_DIRS, Preprocess_Dataset
+from utility.dataset import DATASET_BASE_DIRS, Preprocess_Dataset, convertFileName
 from utility.common import (
     cliquesFromArr,
     matchCliqueLabel,
@@ -231,17 +230,7 @@ class GroudTruthStructure:
 class PopMusicHighlighter:
     def __init__(self, basedir=ALGO_BASE_DIRS["PopMusicHighlighter"]):
         self.basedir = basedir
-        self._convertFileName()
-
-    def _convertFileName(self, norm="NFD"):
-        files = os.listdir(self.basedir)
-        for fileName in files:
-            normalName = unicodedata.normalize(norm, fileName)
-            src = os.path.join(self.basedir, fileName)
-            dst = os.path.join(self.basedir, normalName)
-            if src != dst:
-                os.rename(src, dst)
-                logger.info(f"rename, src='{src}' dst='{dst}'")
+        convertFileName(basedir)
 
     def __call__(self, dataset, idx):
         wavPath = dataset[idx]["wavPath"]
