@@ -16,12 +16,13 @@ from utility.algorithmsWrapper import (
 )
 from utility.metrics import AlgoEvaluator, Metrics_Saver
 from configs.configs import EVAL_RESULT_DIR, FORCE_EVAL, METRIC_NAMES, logger
-from configs.modelConfigs import (
+from configs.trainingConfigs import (
     CLF_VAL_SET,
     CLF_TRAIN_SET,
     USING_DATASET,
     CLF_SPLIT_RATIO,
     RANDOM_SEED,
+    CHORUS_CLASSIFIER_TRAIN_DATA_FILE,
 )
 
 loaders = {
@@ -30,23 +31,24 @@ loaders = {
     "RWC_Popular_accomp": RWC_Popular_Dataset_accomp(),
     # 'SALAMI_functions': SALAMI_Dataset(annotation='functions'),
 }
+trainData = CHORUS_CLASSIFIER_TRAIN_DATA_FILE
 algos = {
-    "seqRecur": AlgoSeqRecur(),
-    "seqRecur+": AlgoSeqRecurBound(),
-    "seqRecurS": AlgoSeqRecurSingle(),
+    "seqRecur": AlgoSeqRecur(trainData["seqRecur"]),
+    "seqRecur+": AlgoSeqRecurBound(trainData["seqRecur"]),
+    "seqRecurS": AlgoSeqRecurSingle(trainData["seqRecur"]),
     "highlighter": PopMusicHighlighter(),
     "refraiD": RefraiD(),
-    "scluster": MsafAlgos("scluster"),
-    "sf": MsafAlgosBdryOnly("sf"),
-    "olda": MsafAlgosBdryOnly("olda"),
-    "foote": MsafAlgosBdryOnly("foote"),
+    "scluster": MsafAlgos("scluster", trainData["scluster"]),
+    "sf": MsafAlgosBdryOnly("sf", trainData["sf"]),
+    "olda": MsafAlgosBdryOnly("olda", trainData["olda"]),
+    "foote": MsafAlgosBdryOnly("foote", trainData["foote"]),
+    "cnmf": MsafAlgos("cnmf", trainData["cnmf"]),
     "scluster+": MsafAlgosBound("scluster"),
     "sf+": MsafAlgosBound("sf"),
     "olda+": MsafAlgosBound("olda"),
-    "cnmf": MsafAlgos("cnmf"),
     "cnmf+": MsafAlgosBound("cnmf"),
     "foote+": MsafAlgosBound("foote"),
-    "gtBoundary": GroudTruthStructure(),
+    "gtBoundary": GroudTruthStructure(trainData["gtBoundary"]),
 }
 algo_order = [
     "seqRecur",

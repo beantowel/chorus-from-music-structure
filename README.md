@@ -39,6 +39,8 @@ A few paths need to be set in `configs/configs.py`:
 
 - the preprocessed data were stored in `DATASET_BASE_DIRS['LocalTemporary_Dataset']`, change it to anywhere you want to store the large files.
 
+The pre-trained model were decided by the `USING_DATASET` variable in `configs/modelConfigs.py`. To use the model trained on RWC dataset, for example, set `USING_DATASET=RWC_Popular_Dataset()`.
+
 If you are only interested in using the algorithm, you can skip the following lines.
 
 If you want to evaluate the algorithms, more configurations need to be done:

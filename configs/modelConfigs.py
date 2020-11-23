@@ -3,21 +3,9 @@ import numpy as np
 from copy import copy
 from collections import defaultdict
 
-from utility.dataset import (
-    RWC_Popular_Dataset,
-    RWC_Popular_Dataset_accomp,
-    SALAMI_Dataset,
-    CCM_Dataset,
-)
-
-# USING_DATASET = SALAMI_Dataset(annotation='functions')
-# USING_DATASET = RWC_Popular_Dataset()
-USING_DATASET = RWC_Popular_Dataset_accomp()
-# USING_DATASET = CCM_Dataset()
-
 
 # preprocess transforms
-SSM_USING_MELODY = False  # True
+SSM_USING_MELODY = True
 MEL_TRANSFORM_IDENTIFIER = 8
 SSM_TRANSFORM_IDENTIFIER = (
     11 if not SSM_USING_MELODY else 12
@@ -59,11 +47,6 @@ CHORUS_DURATION = 10.0
 TUNE_SCOPE = 6.0
 TUNE_WINDOW = 6.0
 
-
-# ssm target generation (label index)
-DATASET_LABEL_SET = USING_DATASET.getLabels()
-SSM_SEMANTIC_LABEL_DIC = defaultdict(int, USING_DATASET.semanticLabelDic())
-assert SSM_SEMANTIC_LABEL_DIC["background"] == 0
 # melody target generation (label index)
 MEL_SEMANTIC_LABEL_DIC = defaultdict(
     int,
@@ -73,33 +56,19 @@ MEL_SEMANTIC_LABEL_DIC = defaultdict(
         "verse": 2,
     },
 )
-
 # Chorus classifier
 CLF_TARGET_LABEL = "chorus"
 CLF_NON_TARGET_LABEL = "others"
-CLF_SPLIT_RATIO = 0.8
-RANDOM_SEED = 114514
-CLF_TRAIN_SET, CLF_VAL_SET = USING_DATASET.randomSplit(
-    CLF_SPLIT_RATIO, seed=RANDOM_SEED
-)
-CHORUS_CLASSIFIER_TRAIN_DATA_FILE = {
-    "seqRecur": f"data/models/{USING_DATASET.__class__.__name__}_tf{SSM_TRANSFORM_IDENTIFIER}_seqRecur_TRAIN.pkl",
-    "scluster": f"data/models/{USING_DATASET.__class__.__name__}_scluster_TRAIN.pkl",
-    "cnmf": f"data/models/{USING_DATASET.__class__.__name__}_cnmf_TRAIN.pkl",
-    "sf": f"data/models/{USING_DATASET.__class__.__name__}_sf_TRAIN.pkl",
-    "olda": f"data/models/{USING_DATASET.__class__.__name__}_olda_TRAIN.pkl",
-    "foote": f"data/models/{USING_DATASET.__class__.__name__}_foote_TRAIN.pkl",
-    "gtBoundary": f"data/models/{USING_DATASET.__class__.__name__}_gtBoundary_TRAIN.pkl",
-}
-CHORUS_CLASSIFIER_VAL_DATA_FILE = {
-    key: val.replace("TRAIN.pkl", "VAL.pkl")
-    for key, val in CHORUS_CLASSIFIER_TRAIN_DATA_FILE.items()
-}
+# classifier parameters
+RD_FOREST_ESTIMATORS = 1000
+RD_FOREST_RANDOM_STATE = 42
 # clique class target generation
 CC_PRECISION = 0.5
 CC_RECALL = 0.0
 MINIMUM_CHORUS_DUR = 10
 
-# classifier parameters
-RD_FOREST_ESTIMATORS = 1000
-RD_FOREST_RANDOM_STATE = 42
+
+# predict model file
+USE_MODEL = os.path.join(
+    f"data/models/RWC_Popular_Dataset_tf{SSM_TRANSFORM_IDENTIFIER}_seqRecur_TRAIN.pkl",
+)

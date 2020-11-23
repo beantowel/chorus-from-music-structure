@@ -5,6 +5,7 @@ import os
 import pickle
 import numpy as np
 from mir_eval.io import load_time_series
+from collections import defaultdict
 
 from models.selfSimilarity import selfSimilarityMatrix
 from models.seqRecur import cliquesFromSSM
@@ -12,15 +13,12 @@ from utility.common import extractFunctions, cliqueGroups, logSSM
 from utility.dataset import Preprocess_Dataset
 from configs.modelConfigs import (
     CLI_TRANSFORM_IDENTIFIER,
-    DATASET_LABEL_SET,
     MEL_SEMANTIC_LABEL_DIC,
     MEL_TRANSFORM_IDENTIFIER,
     SAMPLE_RATE,
     SSM_FEATURES,
-    SSM_SEMANTIC_LABEL_DIC,
     SSM_TRANSFORM_IDENTIFIER,
     SSM_USING_MELODY,
-    USING_DATASET,
 )
 from configs.configs import logger, ALGO_BASE_DIRS
 
@@ -37,12 +35,15 @@ class BaseTransform:
 
 
 class GenerateSSM(BaseTransform):
-    def __init__(self, identifier=SSM_TRANSFORM_IDENTIFIER, dataset=USING_DATASET):
+    def __init__(self, dataset, identifier=SSM_TRANSFORM_IDENTIFIER):
         super(GenerateSSM, self).__init__(identifier)
         tf = ExtractMel()
         self.mel_set = Preprocess_Dataset(
             tf.identifier, dataset, transform=tf.transform
         )
+        self.labelSet = dataset.getLabels()
+        self.labelDic = defaultdict(int, dataset.semanticLabelDic())
+        assert self.labelDic["background"] == 0
 
     def getSSM(self, wavPath, sr):
         if SSM_USING_MELODY:
@@ -78,8 +79,8 @@ class GenerateSSM(BaseTransform):
         intervals, labels = sample["gt"]
         # generate target label matrix
         size = ssm.shape[-1]
-        target = np.full((size, size), SSM_SEMANTIC_LABEL_DIC["background"])
-        for label in DATASET_LABEL_SET:
+        target = np.full((size, size), self.labelDic["background"])
+        for label in self.labelSet:
             intvs = intervals[labels == label]
             for xbegin, xend in intvs:
                 # left	a[i-1] < v <= a[i]
@@ -89,9 +90,7 @@ class GenerateSSM(BaseTransform):
                 for ybegin, yend in intvs:
                     ylower = np.searchsorted(times, ybegin)
                     yhigher = np.searchsorted(times, yend)
-                    target[xlower:xhigher, ylower:yhigher] = SSM_SEMANTIC_LABEL_DIC[
-                        label
-                    ]
+                    target[xlower:xhigher, ylower:yhigher] = self.labelDic[label]
 
         sample["input"] = logSSM(ssm)
         sample["target"] = target
@@ -139,9 +138,9 @@ class ExtractMel(BaseTransform):
 
 
 class ExtractCliques(BaseTransform):
-    def __init__(self, identifier=CLI_TRANSFORM_IDENTIFIER, dataset=USING_DATASET):
+    def __init__(self, dataset, identifier=CLI_TRANSFORM_IDENTIFIER):
         super(ExtractCliques, self).__init__(identifier)
-        self.tf = GenerateSSM()
+        self.tf = GenerateSSM(dataset=dataset)
         self.ssm_set = Preprocess_Dataset(
             self.tf.identifier, dataset, transform=self.tf.transform
         )
@@ -167,7 +166,7 @@ class ExtractCliques(BaseTransform):
 
 
 def getFeatures(dataset, idx):
-    tf = GenerateSSM()
+    tf = GenerateSSM(dataset=dataset)
     ssm_set = Preprocess_Dataset(tf.identifier, dataset, transform=tf.transform)
     ssmSample = ssm_set[idx]
     ssm_f = ssmSample["times"], ssmSample["input"][0]

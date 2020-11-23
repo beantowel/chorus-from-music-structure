@@ -20,7 +20,6 @@ from utility.common import (
     singleChorusSection,
 )
 from configs.modelConfigs import (
-    CHORUS_CLASSIFIER_TRAIN_DATA_FILE,
     CHORUS_DURATION,
     CHORUS_DURATION_SINGLE,
     SMOOTH_KERNEL_SIZE,
@@ -31,8 +30,8 @@ from configs.configs import logger, ALGO_BASE_DIRS
 
 
 class AlgoSeqRecur:
-    def __init__(self):
-        self.clf = ChorusClassifier(CHORUS_CLASSIFIER_TRAIN_DATA_FILE["seqRecur"])
+    def __init__(self, trainFile):
+        self.clf = ChorusClassifier(trainFile)
 
     def __call__(self, dataset, idx):
         ssm_f, mels_f = getFeatures(dataset, idx)
@@ -48,7 +47,7 @@ class AlgoSeqRecur:
         return self._process(dataset, idx, ssm_f)
 
     def _process(self, dataset, idx, ssm_f):
-        tf = ExtractCliques()
+        tf = ExtractCliques(dataset=dataset)
         cliques_set = Preprocess_Dataset(tf.identifier, dataset, transform=tf.transform)
         cliquesSample = cliques_set[idx]
         origCliques = cliquesSample["cliques"]
@@ -58,8 +57,8 @@ class AlgoSeqRecur:
 
 
 class AlgoSeqRecurSingle(AlgoSeqRecur):
-    def __init__(self):
-        super(AlgoSeqRecurSingle, self).__init__()
+    def __init__(self, trainFile):
+        super(AlgoSeqRecurSingle, self).__init__(trainFile)
 
     def __call__(self, dataset, idx):
         ssm_f, mels_f = getFeatures(dataset, idx)
@@ -75,8 +74,8 @@ class AlgoSeqRecurSingle(AlgoSeqRecur):
 
 
 class AlgoSeqRecurBound:
-    def __init__(self):
-        self.rawAlgo = AlgoSeqRecur()
+    def __init__(self, trainFile):
+        self.rawAlgo = AlgoSeqRecur(trainFile)
 
     def __call__(self, dataset, idx):
         ssm_f, mels_f = getFeatures(dataset, idx)
@@ -96,11 +95,11 @@ class AlgoSeqRecurBound:
 # and 'mkdir features' in the dataset folder
 # for faster performance using feature cache instead of single temporary feature
 class MsafAlgos:
-    def __init__(self, boundaries_id):
+    def __init__(self, boundaries_id, trainFile):
         # msaf.get_all_label_algorithms()：
         assert boundaries_id in ["vmo", "scluster", "cnmf"]
         self.bd = boundaries_id
-        self.clf = ChorusClassifier(CHORUS_CLASSIFIER_TRAIN_DATA_FILE[boundaries_id])
+        self.clf = ChorusClassifier(trainFile)
 
     def __call__(self, dataset, idx):
         ssm_f, mels_f = getFeatures(dataset, idx)
@@ -151,11 +150,11 @@ class MsafAlgosBound:
 
 
 class MsafAlgosBdryOnly:
-    def __init__(self, boundaries_id):
+    def __init__(self, boundaries_id, trainFile):
         # msaf.get_all_label_algorithms()：
         assert boundaries_id in ["sf", "olda", "foote"]
         self.bd = boundaries_id
-        self.clf = ChorusClassifier(CHORUS_CLASSIFIER_TRAIN_DATA_FILE[boundaries_id])
+        self.clf = ChorusClassifier(trainFile)
 
     def __call__(self, dataset, idx):
         ssm_f, mels_f = getFeatures(dataset, idx)
@@ -209,11 +208,11 @@ class MsafAlgosBdryOnly:
 
 
 class GroudTruthStructure:
-    def __init__(self):
-        self.clf = ChorusClassifier(CHORUS_CLASSIFIER_TRAIN_DATA_FILE["gtBoundary"])
+    def __init__(self, trainFile):
+        self.clf = ChorusClassifier(trainFile)
 
     def getStructure(self, dataset, idx):
-        tf = GenerateSSM()
+        tf = GenerateSSM(dataset=dataset)
         target = Preprocess_Dataset(tf.identifier, dataset, transform=tf.transform)[
             idx
         ]["target"]

@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from multiprocessing import Pool
 
-from utility.dataset import Preprocess_Dataset
+from utility.dataset import Preprocess_Dataset, buildPreprocessDataset
 from utility.transform import ExtractCliques, ExtractMel
 from utility.algorithmsWrapper import (
     AlgoSeqRecur,
@@ -17,7 +17,7 @@ from utility.algorithmsWrapper import (
 )
 from models.classifier import GetAlgoData
 from configs.configs import NUM_WORKERS, logger
-from configs.modelConfigs import (
+from configs.trainingConfigs import (
     CHORUS_CLASSIFIER_TRAIN_DATA_FILE,
     CHORUS_CLASSIFIER_VAL_DATA_FILE,
     CLF_TRAIN_SET,
@@ -25,12 +25,6 @@ from configs.modelConfigs import (
     USING_DATASET,
 )
 from models.classifier import ChorusClassifier
-
-
-def buildPreprocessDataset(dataset, tf, force=False):
-    preDataset = Preprocess_Dataset(tf.identifier, dataset)
-    preDataset.build(tf.preprocessor, force=force)
-    return preDataset
 
 
 def starGetCliqueClassData(t):
@@ -83,17 +77,18 @@ def testCCDataset(method):
 # build Preprocess Dataset for feature extraction
 transforms = {
     "extract-mel": ExtractMel(),
-    "generate-ssm": GenerateSSM(),
-    "extract-cliques": ExtractCliques(),
+    "generate-ssm": GenerateSSM(dataset=USING_DATASET),
+    "extract-cliques": ExtractCliques(dataset=USING_DATASET),
 }
+trainData = CHORUS_CLASSIFIER_TRAIN_DATA_FILE
 methods = {
-    "seqRecur": GetAlgoData(AlgoSeqRecur()),
-    "scluster": GetAlgoData(MsafAlgos("scluster")),
-    "cnmf": GetAlgoData(MsafAlgos("cnmf")),
-    "sf": GetAlgoData(MsafAlgosBdryOnly("sf")),
-    "olda": GetAlgoData(MsafAlgosBdryOnly("olda")),
-    "foote": GetAlgoData(MsafAlgosBdryOnly("foote")),
-    "gtBoundary": GetAlgoData(GroudTruthStructure()),
+    "seqRecur": GetAlgoData(AlgoSeqRecur(trainData["seqRecur"])),
+    "scluster": GetAlgoData(MsafAlgos("scluster", trainData["scluster"])),
+    "cnmf": GetAlgoData(MsafAlgos("cnmf", trainData["cnmf"])),
+    "sf": GetAlgoData(MsafAlgosBdryOnly("sf", trainData["sf"])),
+    "olda": GetAlgoData(MsafAlgosBdryOnly("olda", trainData["olda"])),
+    "foote": GetAlgoData(MsafAlgosBdryOnly("foote", trainData["foote"])),
+    "gtBoundary": GetAlgoData(GroudTruthStructure(trainData["gtBoundary"])),
 }
 
 

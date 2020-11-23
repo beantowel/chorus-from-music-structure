@@ -21,21 +21,6 @@ EVAL_RESULT_DIR = "data/evalResult/"
 MODELS_DIR = "data/models"
 VIEWER_DATA_DIR = "data/viewerMetadata"
 PRED_DIR = "data/predict"
-# make these directories
-mk_dirs = [
-    EVAL_RESULT_DIR,
-    MODELS_DIR,
-    VIEWER_DATA_DIR,
-    PRED_DIR,
-    ALGO_BASE_DIRS["TmpDir"],
-    DATASET_BASE_DIRS["LocalTemporary_Dataset"],
-    # os.path.join(DATASET_BASE_DIRS["SALAMI"], "features"),
-    os.path.join(DATASET_BASE_DIRS["RWC"], "RWC-MDB-P-2001/features"),
-    os.path.join(DATASET_BASE_DIRS["CCM"], "features"),
-]
-for path in mk_dirs:
-    if not os.path.exists(path):
-        os.mkdir(path)
 
 # process numbers for parallel computing
 NUM_WORKERS = os.cpu_count() // 2
@@ -70,9 +55,8 @@ PLOT_METRIC_FIELDS = [
 # ]
 DETECTION_WINDOW = 3
 
-DEBUG = True if os.getenv("DEBUG") is not None else False
-
 # logging settings
+DEBUG = True if os.getenv("DEBUG") is not None else False
 logger = logging.getLogger("chorus_detector")
 logger.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
@@ -80,3 +64,23 @@ ch.setLevel(logging.DEBUG) if DEBUG else ch.setLevel(logging.INFO)
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 ch.setFormatter(formatter)
 logger.addHandler(ch)
+
+# make these directories
+mk_dirs = [
+    EVAL_RESULT_DIR,
+    MODELS_DIR,
+    VIEWER_DATA_DIR,
+    PRED_DIR,
+    ALGO_BASE_DIRS["TmpDir"],
+    DATASET_BASE_DIRS["LocalTemporary_Dataset"],
+    # os.path.join(DATASET_BASE_DIRS["SALAMI"], "features"),
+    os.path.join(DATASET_BASE_DIRS["RWC"], "RWC-MDB-P-2001/features"),
+    os.path.join(DATASET_BASE_DIRS["CCM"], "features"),
+]
+for path in mk_dirs:
+    if not os.path.exists(path):
+        dirname = os.path.dirname(path)
+        if os.path.exists(dirname):
+            os.mkdir(path)
+        else:
+            logger.warn(f"directory={dirname} does not exist")

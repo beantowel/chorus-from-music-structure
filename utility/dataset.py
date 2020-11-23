@@ -467,6 +467,12 @@ class Preprocess_Dataset:
         return sample
 
 
+def buildPreprocessDataset(dataset, tf, force=False):
+    preDataset = Preprocess_Dataset(tf.identifier, dataset)
+    preDataset.build(tf.preprocessor, force=force)
+    return preDataset
+
+
 class DummyDataset(BaseStructDataset):
     def __init__(self, audioList):
         super(DummyDataset, self).__init__(baseDir=None, transform=None)
@@ -484,3 +490,16 @@ class DummyDataset(BaseStructDataset):
         if self.transform is not None:
             sample = self.transform(sample)
         return sample
+
+    def loadGT(self, GTPath):
+        intervals = np.array(
+            [
+                (0, 0),
+            ]
+        )
+        labels = ["unknown"]
+        return intervals, labels
+
+    def semanticLabelDic(self):
+        dic = {"unkonwn": 0}
+        return dic

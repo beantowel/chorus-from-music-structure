@@ -191,7 +191,9 @@ class ChorusClassifier:
             with open(dataFile, "rb") as f:
                 X, y = pickle.load(f)
                 logger.info(f"<{self.__class__.__name__}> load data from '{dataFile}'")
-                logger.info(f'target(chorus)/total={sum(np.array(y)==CLF_TARGET_LABEL)}/{len(y)}')
+                logger.info(
+                    f"target(chorus)/total={sum(np.array(y)==CLF_TARGET_LABEL)}/{len(y)}"
+                )
         else:
             logger.error(f"build dataset for classifier first")
             raise FileNotFoundError(dataFile)

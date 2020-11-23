@@ -8,14 +8,11 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 from configs.configs import logger, DEBUG, PRED_DIR, VIEWER_DATA_DIR, NUM_WORKERS
-from configs.modelConfigs import SSM_TIME_STEP, CLF_TARGET_LABEL
+from configs.modelConfigs import SSM_TIME_STEP, CLF_TARGET_LABEL, USE_MODEL
 from utility.transform import ExtractMel, GenerateSSM, ExtractCliques, getFeatures
-from utility.dataset import DummyDataset, Preprocess_Dataset
+from utility.dataset import DummyDataset, Preprocess_Dataset, buildPreprocessDataset
 from utility.algorithmsWrapper import AlgoSeqRecur, AlgoSeqRecurSingle
 from utility.common import logSSM, extractFunctions, getLabeledSSM, mergeIntervals
-
-# from models.classifier import *
-from feature import buildPreprocessDataset
 
 
 def plotMats(matrices, titles, show=DEBUG):
@@ -123,9 +120,9 @@ def main(audiofiles, outputdir, metaoutputdir, algo, force, workers):
 
         logger.info(f'processing "{audiofile}"')
         if algo == "multi":
-            algo = AlgoSeqRecur()
+            algo = AlgoSeqRecur(trainFile=USE_MODEL)
         elif algo == "single":
-            algo = AlgoSeqRecurSingle()
+            algo = AlgoSeqRecurSingle(trainFile=USE_MODEL)
         mirexFmt = algo(ddataset, i)
         writeMirexOutput(mirexFmt, output)
 
