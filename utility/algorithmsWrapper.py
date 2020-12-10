@@ -63,7 +63,7 @@ class AlgoSeqRecurSingle(AlgoSeqRecur):
     def __call__(self, dataset, idx):
         ssm_f, mels_f = getFeatures(dataset, idx)
         cliques = self._process(dataset, idx, ssm_f)
-        mirexFmt = chorusDetection(cliques, ssm_f[0], mels_f, self.clf, single=False)
+        mirexFmt = chorusDetection(cliques, ssm_f[0], mels_f, self.clf)
         mirexFmtSingle = maxOverlap(
             mirexFmt, chorusDur=CHORUS_DURATION_SINGLE, centering=False
         )

@@ -51,11 +51,13 @@ def smoothCliques(cliques, size, kernel_size=SMOOTH_KERNEL_SIZE):
 
 
 def cliquesFromSSM(ssm_f, show=False):
+    # affinity propagation
     ssm = ssm_f[1] - np.max(ssm_f[1])
     median = np.median(ssm)
     for i in range(ssm.shape[0]):
         ssm[i, i] = median
     labels = affinityPropagation.fit_predict(ssm)
+    # convert to cliques
     cliques = cliquesFromArr(labels)
     cliques = sorted(cliques, key=lambda c: c[0])
     if show:
@@ -155,10 +157,13 @@ def buildRecurrence(cliques, times):
     size = len(times) - 1
     mergedCliquesList = [
         smoothCliques(
-            mergeAdjacentCliques(cliques, dis=dis), size, kernel_size=kernelSize
+            mergeAdjacentCliques(cliques, dis=dis, dblock=dblock),
+            size,
+            kernel_size=kernelSize,
         )
         for dis in DELTA_DIS_RANGE
         for kernelSize in SMOOTH_KERNEL_SIZE_RANGE
+        for dblock in [0]
     ]
     # mclen = len(mergedCliquesList)
     # for i in range(1):

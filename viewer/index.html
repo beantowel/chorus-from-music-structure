@@ -87,7 +87,7 @@
     <button class="button button2" id="backward3" onclick="changeAudioTime(-3)">-3s</button>
     <button class="button button2" id="backward1" onclick="changeAudioTime(-1)">-1s</button>
     <button class="button button1" id="forward1" onclick="changeAudioTime(1)">+1s</button>
-    <button class="button button1" id="forward1" onclick="changeAudioTime(3)">+3s</button>
+    <button class="button button1" id="forward3" onclick="changeAudioTime(3)">+3s</button>
     </p>
 
     <p>
@@ -99,6 +99,13 @@
 
     <p>
     <h2>Self-similarity matrix</h2>
+    <button class="button button1" id="ssmBar" style="width: 18%; margin-left:27%">
+        progress
+        <div id="ssmDiv" style="width: 100%; backgroudColor: #EDEDED">
+            <div id="ssmProgress"></div>
+        </div>
+    </button>
+    <br>
     <img id="ssmFigure" src="" width="70%">
     </p>
 </body>

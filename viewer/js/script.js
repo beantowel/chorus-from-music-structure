@@ -40,6 +40,17 @@ function handleFileSelect(evt) {
         // load image
         var img = document.getElementById('ssmFigure');
         img.src = obj['figure']
+
+        // image progress bar
+        var player = document.getElementById('player');
+        listener = function (evt) {
+            var prg = document.getElementById("ssmProgress");
+            v = player.currentTime / player.duration * 100;
+            prg.style.backgroundColor = 'black'
+            prg.style.height = '3px'
+            prg.style.width = v + '%'
+        }
+        player.addEventListener('timeupdate', listener)
     }
 
     reader.readAsText(f);

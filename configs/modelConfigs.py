@@ -31,8 +31,10 @@ PITCH_CHROMA_SEQ = 5
 # PITCH_CHROMA_STEP = int(os.getenv("PC_STEP"))
 # PITCH_CHROMA_SEQ = int(os.getenv("PC_SEQ"))
 
-# sequence recurrence algorithm
+# MsafAlgos wrapper
 SSM_LOG_THRESH = -4.5
+
+# sequence recurrence algorithm
 ADJACENT_DELTA_DISTANCE = 10
 DELTA_DIS_RANGE = [5, 10, 20]
 SMOOTH_KERNEL_SIZE = 23
@@ -43,9 +45,9 @@ MIN_STRUCTURE_COUNT = 5
 
 # boundary tuning
 CHORUS_DURATION_SINGLE = 30.0
-CHORUS_DURATION = 10.0
+CHORUS_DURATION = 30.0
 TUNE_SCOPE = 6.0
-TUNE_WINDOW = 6.0
+TUNE_WINDOW = 8.0
 
 # melody target generation (label index)
 MEL_SEMANTIC_LABEL_DIC = defaultdict(
@@ -69,6 +71,13 @@ MINIMUM_CHORUS_DUR = 10
 
 
 # predict model file
-USE_MODEL = os.path.join(
-    f"data/models/RWC_Popular_Dataset_tf{SSM_TRANSFORM_IDENTIFIER}_seqRecur_TRAIN.pkl",
-)
+USE_MODEL = [
+    # RWC
+    os.path.join(
+        f"data/models/RWC_Popular_Dataset_tf{SSM_TRANSFORM_IDENTIFIER}_seqRecur_TRAIN.pkl",
+    ),
+    # CCMusic
+    os.path.join(
+        f"data/models/CCM_Dataset_tf{SSM_TRANSFORM_IDENTIFIER}_seqRecur_TRAIN.pkl",
+    ),
+][1]

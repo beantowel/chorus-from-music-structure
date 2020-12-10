@@ -7,8 +7,17 @@ import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
+from models.classifier import ChorusClassifier, chorusDetection, getFeatures
+from models.pickSingle import maxOverlap, tuneIntervals
 from configs.configs import logger, DEBUG, PRED_DIR, VIEWER_DATA_DIR, NUM_WORKERS
-from configs.modelConfigs import SSM_TIME_STEP, CLF_TARGET_LABEL, USE_MODEL
+from configs.modelConfigs import (
+    SSM_TIME_STEP,
+    CLF_TARGET_LABEL,
+    USE_MODEL,
+    CHORUS_DURATION,
+    CHORUS_DURATION_SINGLE,
+    TUNE_WINDOW,
+)
 from utility.transform import ExtractMel, GenerateSSM, ExtractCliques, getFeatures
 from utility.dataset import DummyDataset, Preprocess_Dataset, buildPreprocessDataset
 from utility.algorithmsWrapper import AlgoSeqRecur, AlgoSeqRecurSingle
@@ -24,7 +33,6 @@ def plotMats(matrices, titles, show=DEBUG):
     if len(matrices) == 1:
         axis = np.array([axis])
     axis = axis.flatten()
-    print(f"axis:{axis}")
     for i, mat in enumerate(matrices):
         logger.debug(f"{titles[i]}{mat.shape}, min={np.min(mat)}, max={np.max(mat)}")
         ax = axis[i]
@@ -101,6 +109,7 @@ def drawSegments(ref, est, ssm, times):
 @click.option("--force", nargs=1, type=click.BOOL, default=False)
 @click.option("--workers", nargs=1, type=click.INT, default=NUM_WORKERS)
 def main(audiofiles, outputdir, metaoutputdir, algo, force, workers):
+    logger.debug(f"algo={algo}")
     logger.info(f"preprocess to generate features")
     ddataset = DummyDataset(audiofiles)
     transforms = [
@@ -118,22 +127,37 @@ def main(audiofiles, outputdir, metaoutputdir, algo, force, workers):
         output = os.path.join(outputdir, audioFileName + ".txt")
         metaOutput = os.path.join(metaoutputdir, audioFileName + "_meta.json")
 
-        logger.info(f'processing "{audiofile}"')
-        if algo == "multi":
-            algo = AlgoSeqRecur(trainFile=USE_MODEL)
-        elif algo == "single":
-            algo = AlgoSeqRecurSingle(trainFile=USE_MODEL)
-        mirexFmt = algo(ddataset, i)
-        writeMirexOutput(mirexFmt, output)
+        # logger.info(f'processing "{audiofile}"')
+        # if algo == "multi":
+        #     algo = AlgoSeqRecur(trainFile=USE_MODEL)
+        # elif algo == "single":
+        #     algo = AlgoSeqRecurSingle(trainFile=USE_MODEL)
+        # mirexFmt = algo(ddataset, i)
 
-        # write viewer metadata
-        ssm_f, _ = getFeatures(ddataset, i)
+        predictor = AlgoSeqRecur(trainFile=USE_MODEL)
+        ssm_f, mels_f = getFeatures(ddataset, i)
+        cliques = predictor._process(ddataset, i, ssm_f)
+        mirexFmt = chorusDetection(cliques, ssm_f[0], mels_f, predictor.clf)
+        if algo == "multi":
+            mirexFmt = tuneIntervals(
+                mirexFmt, mels_f, chorusDur=CHORUS_DURATION, window=TUNE_WINDOW
+            )
+        elif algo == "single":
+            mirexFmtSingle = maxOverlap(
+                mirexFmt, chorusDur=CHORUS_DURATION_SINGLE, centering=False
+            )
+            mirexFmtSingle = tuneIntervals(
+                mirexFmtSingle,
+                mels_f,
+                chorusDur=CHORUS_DURATION_SINGLE,
+                window=TUNE_WINDOW,
+            )
+
+        # plot mats
         tf = ExtractCliques(dataset=ddataset)
         origCliques = Preprocess_Dataset(
             tf.identifier, ddataset, transform=tf.transform
         )[i]["cliques"]
-        cliques = algo._process(ddataset, i, ssm_f)
-
         olssm = getLabeledSSM(origCliques, ssm_f[1].shape[-1])
         lssm = getLabeledSSM(cliques, ssm_f[1].shape[-1])
         olssm = drawSegments(mirexFmt, mirexFmt, olssm, ssm_f[0])
@@ -141,6 +165,10 @@ def main(audiofiles, outputdir, metaoutputdir, algo, force, workers):
         titles = ["fused SSM", "result structure", "low level structure"]
         plotMats(mats, titles, show=False)
 
+        # write output and viewer metadata
+        if algo == "single":
+            mirexFmt = mirexFmtSingle
+        writeMirexOutput(mirexFmt, output)
         figurePath = os.path.join(os.getcwd(), f"data/test/predict_{audioFileName}.svg")
         plt.savefig(figurePath, bbox_inches="tight")
         writeJsonMetadata(audiofile, mergeIntervals(mirexFmt), figurePath, metaOutput)
