@@ -3,13 +3,17 @@ import scipy
 import numpy as np
 from copy import deepcopy
 
-from utility.GraphDitty.CSMSSMTools import getCSM, getCSMCosine, getShiftInvariantCSM
-from utility.GraphDitty.SimilarityFusion import doSimilarityFusionWs, getW
+from third_party.GraphDitty.CSMSSMTools import (
+    getCSM,
+    getCSMCosine,
+    getShiftInvariantCSM,
+)
+from third_party.GraphDitty.SimilarityFusion import doSimilarityFusionWs, getW
 from utility.common import logSSM, printArray
 from configs.modelConfigs import (
     PITCH_CHROMA_CLASS,
-    PITCH_CHROMA_SEQ,
-    PITCH_CHROMA_STEP,
+    PITCH_CHROMA_HOP,
+    PITCH_CHROMA_COUNT,
     REC_SMOOTH,
 )
 from configs.configs import logger
@@ -52,6 +56,7 @@ def selfSimilarityMatrix(
         onset_envelope=oenv, sr=sr, hop_length=hop_length
     )
 
+    # generate W- matrices
     n_frames = np.min([chroma.shape[1], mfcc.shape[1], tempogram.shape[1]])
     intervals = librosa.util.fix_frames(intervals, x_min=0, x_max=n_frames)
     times = intervals * float(hop_length) / float(sr)
@@ -64,7 +69,7 @@ def selfSimilarityMatrix(
         chroma,
         size,
         np.median,
-        getShiftInvariantCSM(getCSMCosine, wins_per_block=wins_per_block),
+        getShiftInvariantCSM(getCSMCosine, wins_per_block),
         wins_per_block=wins_per_block,
     )
     WTempo = feature2W(tempogram, size, np.mean, getCSM, wins_per_block=wins_per_block)
@@ -79,8 +84,8 @@ def selfSimilarityMatrix(
         WPitches = feature2W(
             pitches,
             size,
-            np.mean,
-            getShiftInvariantCSM(getCSM, wins_per_block, n_seq=PITCH_CHROMA_SEQ),
+            np.median,
+            getShiftInvariantCSM(getCSMCosine, wins_per_block),
             wins_per_block=wins_per_block,
         )
         printArray(WPitches, "pitchChroma")
@@ -106,37 +111,35 @@ def selfSimilarityMatrix(
 def pitchChroma(
     pitches,
     n_class=PITCH_CHROMA_CLASS,
-    n_step=PITCH_CHROMA_STEP,
-    n_seq=PITCH_CHROMA_SEQ,
+    count=PITCH_CHROMA_COUNT,
+    hop=PITCH_CHROMA_HOP,
 ):
-    """input: [t]
-    output: [n_class*n_seq, t]
-    n_step is counting window size
-    n_seq is counting window number"""
+    """input: [frames]
+    output: [n_class, frames]"""
     pitches = deepcopy(pitches)
-    size = pitches.shape[-1]
+    frames = pitches.shape[-1]
     nonVoice = pitches <= 0  # whether it's a voicing frame
     pitches[nonVoice] = 10  # avoid log(0) warning
     pitches = librosa.hz_to_midi(pitches) * n_class / 12
     pitches = np.remainder(pitches.astype(int), n_class)
     # -1 represnets non-voice, will be ignored in bincount
-    pitches[nonVoice] = -1
+    pitches[nonVoice] = n_class
+    # pitches: [1, frames]
     pitches = np.expand_dims(pitches, axis=0)
 
-    assert (pitches < n_class).all()
-    # XPitches: [n_steps, t]
-    XPitches = librosa.feature.stack_memory(pitches, n_steps=n_step, mode="edge")
-    assert (XPitches < n_class).all(), "suprise! just try again the bug might gone"
+    assert (pitches <= n_class).all()
+    # XPitches: [count, frames]
+    XPitches = librosa.feature.stack_memory(
+        pitches, n_steps=count, delay=hop, mode="edge"
+    )
+    assert (XPitches <= n_class).all(), "suprise! just try again the bug might gone"
 
-    res = np.zeros((n_class, n_seq, size))
-    for t in range(size):
-        windowedPitches = XPitches[:, t]
-        voicePitches = windowedPitches[windowedPitches >= 0]
-        res[:, 0, t] = np.bincount(voicePitches, minlength=n_class)
-        for i in range(n_seq)[1:]:
-            if (t - i) >= 0:
-                res[:, i, t - i] = res[:, 0, t]
-    res = res.reshape(n_class * n_seq, size)
+    # res: [n_class, frames]
+    res = np.zeros((n_class, frames))
+    weights = np.array([count - i for i in range(count)])
+    for t in range(frames):
+        bins = np.bincount(XPitches[:, t], weights=weights, minlength=n_class)
+        res[:, t] = bins[:n_class]
     return res
 
 

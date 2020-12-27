@@ -6,12 +6,14 @@ from utility.dataset import (
     SALAMI_Dataset,
     CCM_Dataset,
 )
-from configs.modelConfigs import SSM_TRANSFORM_IDENTIFIER
+from configs.modelConfigs import SSM_TRANSFORM_IDENTIFIER, USE_DATASET_NAME
 
-# USING_DATASET = SALAMI_Dataset(annotation='functions')
 USING_DATASET = RWC_Popular_Dataset()
-# USING_DATASET = RWC_Popular_Dataset_accomp()
-# USING_DATASET = CCM_Dataset()
+USE_DATASET_DIC = {
+    "RWC": RWC_Popular_Dataset,
+    "CCMusic": CCM_Dataset,
+}
+USING_DATASET = USE_DATASET_DIC[USE_DATASET_NAME]()
 
 # ssm target generation (label index)
 CLF_SPLIT_RATIO = 0.8

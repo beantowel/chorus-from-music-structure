@@ -1,4 +1,5 @@
 import numpy as np
+import librosa
 
 import matplotlib.pyplot as plt
 from configs.configs import logger, DEBUG
@@ -7,13 +8,16 @@ from configs.modelConfigs import (
     CHORUS_DURATION,
     TUNE_SCOPE,
     CLF_TARGET_LABEL,
+    MINIMUM_CHORUS_DUR,
 )
 from utility.common import (
     mergeIntervals,
     intervalIntersection,
     singleChorusSection,
     multiChorusSections,
+    removeNumber,
     filterIntvs,
+    mirexLines,
 )
 
 
@@ -45,28 +49,25 @@ def maxOverlap(mirexFmt, chorusDur=CHORUS_DURATION_SINGLE, centering=False):
     return singleChorusSection(begin, end, dur)
 
 
-def arousalPoint(time, times, pitches, window, show=DEBUG):
+def arousalPoint(time, times, pitches, window, begin, show=DEBUG):
     def arousalScore(t):
-        beforePitches = pitches[(times >= t - TUNE_SCOPE / 2) & (times <= t)]
-        afterPitches = pitches[(times >= t) & (times <= t + TUNE_SCOPE / 2)]
-        score = np.sum(afterPitches) - np.sum(beforePitches)
-        return score / len(beforePitches)
+        before = pitches[(times >= t - TUNE_SCOPE / 2) & (times <= t)]
+        after = pitches[(times >= t) & (times <= t + TUNE_SCOPE / 2)]
+        before = (librosa.hz_to_midi(before + 0.1) * 6 / 12).astype(int)
+        after = (librosa.hz_to_midi(after + 0.1) * 6 / 12).astype(int)
+        score = np.sum(after) - np.sum(before)
+        return score / len(before)
 
     mask = (times >= time - window / 2) & (times <= time + window / 2)
     scores = [arousalScore(t) for t in times[mask]]
-    point = times[mask][np.argmax(scores)]
+    point = times[mask][np.argmax(scores)] if begin else times[mask][np.argmin(scores)]
     if show:
-        pointY = np.max(scores)
-        if np.min(pitches) < 0:
-            pitches = -pitches
-            scores = -np.array(scores)
-            pointY = -pointY
         logger.debug(
             f"point={point} times={times[mask][0]}~{times[mask][-1]} window={window}"
         )
         plt.plot(times[mask], pitches[mask], label="pitch")
         plt.plot(times[mask], scores, label="score")
-        plt.scatter(point, pointY)
+        plt.scatter(point, np.max(scores) if begin else np.min(scores))
         plt.xlabel("time/s")
         plt.ylabel("freq/Hz")
         plt.legend()
@@ -75,14 +76,17 @@ def arousalPoint(time, times, pitches, window, show=DEBUG):
 
 
 def tuneIntervals(mirexFmt, mels_f, chorusDur, window):
+    mirexFmt = removeNumber(mirexFmt)
     mirexFmt = mergeIntervals(mirexFmt)
+    logger.debug(f"tune interval=\n{mirexLines(mirexFmt)}")
     dur = mirexFmt[0][-1][1]
     intvs = filterIntvs(mirexFmt, fun=CLF_TARGET_LABEL)
     tuneIntvs = []
     times, pitches = mels_f
     for intv in intvs:
-        begin = arousalPoint(intv[0], times, pitches, window)
-        end = arousalPoint(intv[1], times, -pitches, window)
+        begin = arousalPoint(intv[0], times, pitches, window, True)
+        end = arousalPoint(intv[1], times, pitches, window, False)
         end = min(dur, max(end, begin + chorusDur))
-        tuneIntvs.append((begin, end))
+        if end - begin > MINIMUM_CHORUS_DUR:
+            tuneIntvs.append((begin, end))
     return multiChorusSections(tuneIntvs, dur)

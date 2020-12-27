@@ -39,19 +39,21 @@ def getCSMCosine(X, Y):
     # return angularDistance
 
 
-def getShiftInvariantCSM(metricFunc, wins_per_block=20, n_seq=1):
+def getShiftInvariantCSM(metricFunc, wins_per_block):
     def fun(X, Y):
-        # X[m, d_feature * wins]
+        # X[m, n_class * wins]
         m, d = X.shape
-        d_feature = d // wins_per_block // n_seq
-        # Xr[m, wins, d_feature, n_seq]
-        Xr = copy(X.reshape(m, wins_per_block, d_feature, n_seq))
+        n_class = d // wins_per_block
+        # Xr[m, n_class, wins]
+        Xr = copy(X.reshape(m, n_class, wins_per_block))
+        # Dlist[n_class, m, m]
         DList = []
-        for shift in range(d_feature):
-            Xn = np.roll(Xr, shift, axis=2).reshape(m, d)
+        for shift in range(n_class):
+            Xn = np.roll(Xr, shift, axis=1).reshape(m, d)
             D = metricFunc(Xn, Y)
             DList.append(D)
         DList = np.array(DList)
+        # res[m, m]
         res = np.min(DList, axis=0)
         return res
 

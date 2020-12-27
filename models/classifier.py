@@ -4,7 +4,7 @@ import os
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 
-from utility.common import cliqueHeads, cliqueTails, getCliqueLabels
+from utility.common import cliqueHeads, cliqueTails, getCliqueLabels, numberCliques
 from utility.transform import getFeatures
 from configs.configs import logger
 from configs.modelConfigs import (
@@ -13,18 +13,6 @@ from configs.modelConfigs import (
     RD_FOREST_RANDOM_STATE,
     CLF_TARGET_LABEL,
 )
-
-
-def numberCliques(cliques, labels):
-    # numbering cliques (recurrence label)
-    typeCount = {}
-    for clique in sorted(cliques, key=lambda c: c[0]):
-        ltype = labels[clique[0]]
-        count = typeCount.get(ltype, 0)
-        for idx in clique:
-            labels[idx] += f" {chr(65+count)}"
-        typeCount[ltype] = count + 1
-    return labels
 
 
 def chorusDetection(cliques, ssm_times, mels_f, clf):

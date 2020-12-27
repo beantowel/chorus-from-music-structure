@@ -5,7 +5,7 @@ from collections import defaultdict
 
 
 # preprocess transforms
-SSM_USING_MELODY = True
+SSM_USING_MELODY = False
 MEL_TRANSFORM_IDENTIFIER = 8
 SSM_TRANSFORM_IDENTIFIER = (
     11 if not SSM_USING_MELODY else 12
@@ -24,12 +24,12 @@ SSM_FEATURES = {
 }[SSM_TRANSFORM_IDENTIFIER]
 
 # pitch chroma feature
-PITCH_CHROMA_CLASS = 24
-PITCH_CHROMA_STEP = 10
-PITCH_CHROMA_SEQ = 5
+PITCH_CHROMA_CLASS = 12
+PITCH_CHROMA_COUNT = 30
+PITCH_CHROMA_HOP = 3
 # PITCH_CHROMA_CLASS = int(os.getenv("PC_CLASS"))
-# PITCH_CHROMA_STEP = int(os.getenv("PC_STEP"))
-# PITCH_CHROMA_SEQ = int(os.getenv("PC_SEQ"))
+# PITCH_CHROMA_COUNT = int(os.getenv("PC_STEP"))
+# PITCH_CHROMA_HOP = int(os.getenv("PC_SEQ"))
 
 # MsafAlgos wrapper
 SSM_LOG_THRESH = -4.5
@@ -45,9 +45,9 @@ MIN_STRUCTURE_COUNT = 5
 
 # boundary tuning
 CHORUS_DURATION_SINGLE = 30.0
-CHORUS_DURATION = 30.0
+CHORUS_DURATION = 10.0
 TUNE_SCOPE = 6.0
-TUNE_WINDOW = 8.0
+TUNE_WINDOW = 6.0
 
 # melody target generation (label index)
 MEL_SEMANTIC_LABEL_DIC = defaultdict(
@@ -71,13 +71,13 @@ MINIMUM_CHORUS_DUR = 10
 
 
 # predict model file
-USE_MODEL = [
-    # RWC
-    os.path.join(
+USE_DATASET_NAME = "RWC"
+USE_MODEL_DIC = {
+    "RWC": os.path.join(
         f"data/models/RWC_Popular_Dataset_tf{SSM_TRANSFORM_IDENTIFIER}_seqRecur_TRAIN.pkl",
     ),
-    # CCMusic
-    os.path.join(
+    "CCMusic": os.path.join(
         f"data/models/CCM_Dataset_tf{SSM_TRANSFORM_IDENTIFIER}_seqRecur_TRAIN.pkl",
     ),
-][1]
+}
+USE_MODEL = USE_MODEL_DIC[USE_DATASET_NAME]

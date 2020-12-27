@@ -106,7 +106,7 @@ def drawSegments(ref, est, ssm, times):
 @click.option(
     "--algo", nargs=1, type=click.Choice(["multi", "single"]), default="multi"
 )
-@click.option("--force", nargs=1, type=click.BOOL, default=False)
+@click.option("--force", nargs=1, type=click.BOOL, default=True)
 @click.option("--workers", nargs=1, type=click.INT, default=NUM_WORKERS)
 def main(audiofiles, outputdir, metaoutputdir, algo, force, workers):
     logger.debug(f"algo={algo}")
@@ -121,6 +121,7 @@ def main(audiofiles, outputdir, metaoutputdir, algo, force, workers):
         preDataset = Preprocess_Dataset(tf.identifier, ddataset)
         preDataset.build(tf.preprocessor, force=force, num_workers=workers)
 
+    predictor = AlgoSeqRecur(trainFile=USE_MODEL)
     for i, pair in enumerate(ddataset.pathPairs):
         audioFileName, audiofile, _ = pair
         audiofile = os.path.abspath(audiofile)
@@ -134,7 +135,6 @@ def main(audiofiles, outputdir, metaoutputdir, algo, force, workers):
         #     algo = AlgoSeqRecurSingle(trainFile=USE_MODEL)
         # mirexFmt = algo(ddataset, i)
 
-        predictor = AlgoSeqRecur(trainFile=USE_MODEL)
         ssm_f, mels_f = getFeatures(ddataset, i)
         cliques = predictor._process(ddataset, i, ssm_f)
         mirexFmt = chorusDetection(cliques, ssm_f[0], mels_f, predictor.clf)

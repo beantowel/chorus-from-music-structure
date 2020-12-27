@@ -216,7 +216,10 @@ def singleChorusSection(begin, end, dur):
 
 
 def multiChorusSections(intvs, dur):
+    """avoid intersection of tuned intervals"""
+
     def key(x):
+        # timestamp with precision of 0.01s
         return int(x * 100)
 
     # value 1=chorus begin -1=chorus end
@@ -238,9 +241,27 @@ def multiChorusSections(intvs, dur):
         else:
             logger.error(f"invalid state, boundaries={boundaries}")
     intervals[-1][1] = dur
-    logger.debug(f"multi chorus, intvs={intvs} intervals={intervals} labels={labels}")
     mirexFmt = (np.array(intervals), np.array(labels, dtype="U16"))
+    logger.debug(f"multi chorus sections, output=\n{mirexLines(mirexFmt)}")
     return mergeIntervals(mirexFmt)
+
+
+def numberCliques(cliques, labels):
+    # numbering cliques (recurrence label)
+    typeCount = {}
+    for clique in sorted(cliques, key=lambda c: c[0]):
+        ltype = labels[clique[0]]
+        count = typeCount.get(ltype, 0)
+        for idx in clique:
+            labels[idx] += f" {chr(65+count)}"
+        typeCount[ltype] = count + 1
+    return labels
+
+
+def removeNumber(mirexFmt):
+    intervals, labels = mirexFmt
+    labels = np.array(list(map(lambda label: label.split()[0], labels)), dtype="U16")
+    return (intervals, labels)
 
 
 def printArray(arr, name, show=False):
@@ -249,3 +270,11 @@ def printArray(arr, name, show=False):
         plt.imshow(logSSM(arr), aspect="auto")
         plt.colorbar()
         plt.show()
+
+
+def mirexLines(mirexFmt):
+    intervals, labels = mirexFmt
+    s = ""
+    for intv, label in zip(intervals, labels):
+        s += f"{intv} {label}\n"
+    return s
