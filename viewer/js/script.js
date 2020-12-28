@@ -84,7 +84,7 @@ function genProgressButton(annotation, divID) {
         btn.className = buttonClz(label)
         btn.id = getID('button', index);
         btn.innerHTML = label;
-        btn.style.width = Math.max(105, 5 * (item['end'] - item['begin'])) + 'px'
+        btn.style.width = Math.min(600, Math.max(105, 5 * (item['end'] - item['begin']))) + 'px'
 
         // progress bar inside button
         var prg = document.createElement('div');

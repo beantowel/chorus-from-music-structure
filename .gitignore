@@ -7,9 +7,12 @@ __pycache__/
 # scripts and tests
 scripts/
 test*.py
-*.sh
+/*.sh
 
 # other data
 data/predict/*
 data/test/
 data/viewerMetadata/*
+
+# third-pary venv
+third_pary/pop-music-highlighter/venv

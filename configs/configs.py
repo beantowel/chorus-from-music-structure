@@ -4,8 +4,8 @@ import logging
 SA_HOME = os.environ["HOME"] + "/FDU/MIR"
 # dependency location and location to store temporary files running the dependencies
 ALGO_BASE_DIRS = {
-    "JDC": f"{SA_HOME}/Projects/melodyExtraction_JDC",
-    "PopMusicHighlighter": f"{SA_HOME}/Projects/results_of_highlighter",
+    "JDC": f"{os.getcwd()}/third_party/melodyExtraction_JDC",
+    "PopMusicHighlighter": f"{os.getcwd()}/third_party/pop-music-highlighter",
     "TmpDir": "/tmp/MIR",
 }
 # dataset location and preprocess cache files location

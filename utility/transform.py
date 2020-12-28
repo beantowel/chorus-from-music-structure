@@ -102,16 +102,16 @@ class GenerateSSM(BaseTransform):
 class ExtractMel(BaseTransform):
     def __init__(self, identifier=MEL_TRANSFORM_IDENTIFIER):
         super(ExtractMel, self).__init__(identifier)
+        self.algoDir = ALGO_BASE_DIRS["JDC"]
 
     def preprocessor(self, wavPath, sr=SAMPLE_RATE):
         """<Joint Detection and Classification of Singing Voice Melody Using Convolutional Recurrent Neural Networks>"""
         wavPath = os.path.abspath(wavPath)
-        title = os.path.splitext(os.path.split(wavPath)[-1])[0]
+        title = os.path.splitext(os.path.basename(wavPath))[0]
         melPath = os.path.join(ALGO_BASE_DIRS["TmpDir"], f"{title}_JDC_out.csv")
-        excPath = os.path.join(ALGO_BASE_DIRS["JDC"], "melodyExtraction_JDC.py")
+        excPath = os.path.join(self.algoDir, "melodyExtraction_JDC.py")
         commands = ("python", excPath, wavPath, melPath)
-        kwargs = {"cwd": ALGO_BASE_DIRS["JDC"]}
-        ret = subprocess.call(commands, **kwargs)
+        ret = subprocess.call(commands, cwd=self.algoDir)
         assert ret == 0, f"return value: {ret} != 0"
         times, pitches = load_time_series(melPath, delimiter=r"\s+|,")
         return {"times": times, "pitches": pitches}

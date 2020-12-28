@@ -18,6 +18,9 @@ from utility.common import (
     matchCliqueLabel,
     matchLabel,
     singleChorusSection,
+    removeNumber,
+    mergeIntervals,
+    intervalIntersection,
 )
 from configs.modelConfigs import (
     CHORUS_DURATION,
@@ -25,6 +28,8 @@ from configs.modelConfigs import (
     SMOOTH_KERNEL_SIZE,
     SSM_LOG_THRESH,
     TUNE_WINDOW,
+    USE_MODEL,
+    CLF_TARGET_LABEL,
 )
 from configs.configs import logger, ALGO_BASE_DIRS
 
@@ -226,24 +231,9 @@ class GroudTruthStructure:
         return mirexFmt
 
 
-class PopMusicHighlighter:
-    def __init__(self, basedir=ALGO_BASE_DIRS["PopMusicHighlighter"]):
-        self.basedir = basedir
-        convertFileName(basedir)
-
-    def __call__(self, dataset, idx):
-        wavPath = dataset[idx]["wavPath"]
-        title = dataset[idx]["title"]
-        dur = librosa.get_duration(filename=wavPath)
-        target = os.path.join(self.basedir, f"{title}_highlight.npy")
-        assert os.path.exists(target), f"target={target}"
-        x = np.load(target)
-        return singleChorusSection(x[0], x[1], dur)
-
-
-class RefraiD:
-    def __init__(self, baseDir=DATASET_BASE_DIRS["LocalTemporary_Dataset"]):
-        self.cacheDir = os.path.join(baseDir, "RefraiD-cache")
+class CachedAlgo:
+    def __init__(self, dirname, baseDir=DATASET_BASE_DIRS["LocalTemporary_Dataset"]):
+        self.cacheDir = os.path.join(baseDir, dirname)
         if not os.path.exists(self.cacheDir):
             os.mkdir(self.cacheDir)
 
@@ -253,37 +243,115 @@ class RefraiD:
             self.cacheDir, f"{dataset.__class__.__name__}-{idx}-{title}.json"
         )
 
-    def _readCache(self, dataset, idx):
+    def readCache(self, dataset, idx):
         filename = self._cacheFile(dataset, idx)
         if not os.path.exists(filename):
             return None
         with open(filename) as f:
             data = json.load(f)
-            return data["start"], data["clip_length"]
+            return data
 
-    def _writeCache(self, dataset, idx, start, clip_length):
+    def writeCache(self, dataset, idx, data):
         filename = self._cacheFile(dataset, idx)
-        data = {"start": start, "clip_length": clip_length}
         with open(filename, "w") as f:
-            logger.info(f"RefraiD writing to cache={filename}")
+            logger.info(f"writing to cache, path={filename}")
             json.dump(data, f)
 
-    def __call__(self, dataset, idx, clip_length=30):
+
+class PopMusicHighlighter(CachedAlgo):
+    def __init__(self):
+        super(PopMusicHighlighter, self).__init__("highlighter-cache")
+        self.algoDir = ALGO_BASE_DIRS["PopMusicHighlighter"]
+        if not os.path.exists(os.path.join(self.algoDir, "venv")):
+            ret = subprocess.call(
+                "./init.sh", shell=True, cwd=self.algoDir, executable="/bin/bash"
+            )
+            assert ret == 0, f"return value: {ret} != 0"
+
+    def getChorus(self, wavPath):
+        title = os.path.splitext(os.path.basename(wavPath))[0]
+        output = os.path.join(ALGO_BASE_DIRS["TmpDir"], f"{title}_highlighter_out.txt")
+        commands = ("./venv/bin/python", "wrapper.py", wavPath, output)
+        ret = subprocess.call(commands, cwd=self.algoDir)
+        assert ret == 0, f"return value: {ret} != 0"
+        intervals, labels = load_labeled_intervals(output, delimiter="\t")
+        assert labels[1] == "chorus", f"can't find chorus, labels={labels}"
+        return intervals[1][0], intervals[1][1]
+
+    def __call__(self, dataset, idx):
         wavPath = dataset[idx]["wavPath"]
         dur = librosa.get_duration(filename=wavPath)
-        data = self._readCache(dataset, idx)
+        data = self.readCache(dataset, idx)
         if data is not None:
-            start, clip_length = data
+            start, end = data["start"], data["end"]
         else:
+            start, end = self.getChorus(wavPath)
+            self.writeCache(dataset, idx, {"start": start, "end": end})
+        return singleChorusSection(start, end, dur)
+
+
+class RefraiD(CachedAlgo):
+    def __init__(self):
+        super(RefraiD, self).__init__("RefraiD-cache")
+
+    def getChorus(self, wavPath, clip_length=30):
+        start = find_and_output_chorus(wavPath, None, clip_length)
+        while start is None and clip_length > 5:
+            clip_length -= 5
+            logger.warn(
+                f"RefraiD failed to detect chorus, reduce clip_length={clip_length}"
+            )
             start = find_and_output_chorus(wavPath, None, clip_length)
-            while start is None and clip_length > 5:
-                clip_length -= 5
-                logger.warn(
-                    f"RefraiD failed to detect chorus, reduce clip_length={clip_length}"
-                )
-                start = find_and_output_chorus(wavPath, None, clip_length)
-            if start is None:
-                logger.warn(f"RefraiD failed to detect chorus")
-                start = 0
-            self._writeCache(dataset, idx, start, clip_length)
-        return singleChorusSection(start, start + clip_length, dur)
+        if start is None:
+            logger.warn(f"RefraiD failed to detect chorus")
+            start = 0
+        return start, clip_length
+
+    def __call__(self, dataset, idx):
+        wavPath = dataset[idx]["wavPath"]
+        dur = librosa.get_duration(filename=wavPath)
+        data = self.readCache(dataset, idx)
+        if data is not None:
+            start, length = data["start"], data["length"]
+        else:
+            start, length = self.getChorus(wavPath)
+            self.writeCache(dataset, idx, {"start": start, "length": length})
+        return singleChorusSection(start, start + length, dur)
+
+
+class AlgoMixed:
+    def __init__(self):
+        self.pred1 = AlgoSeqRecur(trainFile=USE_MODEL)
+        self.pred2 = PopMusicHighlighter()
+
+    def mixChorus(self, mirex1, mirex2):
+        mirex1, mirex2 = removeNumber(mirex1), removeNumber(mirex2)
+        mirex1, mirex2 = mergeIntervals(mirex1), mergeIntervals(mirex2)
+        chorus1 = np.nonzero(np.char.startswith(mirex1[1], CLF_TARGET_LABEL))[0]
+        chorus2 = np.nonzero(np.char.startswith(mirex2[1], CLF_TARGET_LABEL))[0]
+        logger.debug(f"choru1={chorus1} chorus2={chorus2}")
+        dur = mirex1[0][-1][1]
+
+        chorusIntsec = (
+            []
+        )  # select (begin, begin + 30s) with maximal overlap with detected chorus sections
+        for idx1 in chorus1:
+            intsec = np.sum(
+                [
+                    intervalIntersection(mirex1[0][idx1], mirex2[0][idx2])
+                    for idx2 in chorus2
+                ]
+            )
+            chorusIntsec.append(intsec)
+        nonzeros = np.nonzero(chorusIntsec)[0]
+        selectIndex = nonzeros[0] if len(nonzeros) > 0 else 0
+        idx = chorus1[selectIndex]
+
+        begin, end = mirex1[0][idx]
+        return singleChorusSection(begin, end, dur)
+
+    def __call__(self, dataset, idx):
+        out1 = self.pred1(dataset, idx)
+        out2 = self.pred2(dataset, idx)
+        mixed = self.mixChorus(out1, out2)
+        return mixed

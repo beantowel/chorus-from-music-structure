@@ -20,7 +20,12 @@ from configs.modelConfigs import (
 )
 from utility.transform import ExtractMel, GenerateSSM, ExtractCliques, getFeatures
 from utility.dataset import DummyDataset, Preprocess_Dataset, buildPreprocessDataset
-from utility.algorithmsWrapper import AlgoSeqRecur, AlgoSeqRecurSingle
+from utility.algorithmsWrapper import (
+    AlgoSeqRecur,
+    AlgoSeqRecurSingle,
+    PopMusicHighlighter,
+    AlgoMixed,
+)
 from utility.common import logSSM, extractFunctions, getLabeledSSM, mergeIntervals
 
 
@@ -99,14 +104,28 @@ def drawSegments(ref, est, ssm, times):
     return ssm
 
 
+def switchPred(algo):
+    if algo == "highlighter":
+        return PopMusicHighlighter()
+    elif algo == "mixed":
+        return AlgoMixed()
+    else:
+        return None
+
+
 @click.command()
 @click.argument("audiofiles", nargs=-1, type=click.Path(exists=True))
 @click.option("--outputdir", nargs=1, default=PRED_DIR, type=click.Path())
 @click.option("--metaOutputdir", nargs=1, default=VIEWER_DATA_DIR, type=click.Path())
 @click.option(
-    "--algo", nargs=1, type=click.Choice(["multi", "single"]), default="multi"
+    "--algo",
+    nargs=1,
+    type=click.Choice(["multi", "single", "highlighter", "mixed"]),
+    default="multi",
 )
-@click.option("--force", nargs=1, type=click.BOOL, default=True)
+@click.option(
+    "--force", nargs=1, type=click.BOOL, default=True, help="overwrite cached features."
+)
 @click.option("--workers", nargs=1, type=click.INT, default=NUM_WORKERS)
 def main(audiofiles, outputdir, metaoutputdir, algo, force, workers):
     logger.debug(f"algo={algo}")
@@ -122,18 +141,12 @@ def main(audiofiles, outputdir, metaoutputdir, algo, force, workers):
         preDataset.build(tf.preprocessor, force=force, num_workers=workers)
 
     predictor = AlgoSeqRecur(trainFile=USE_MODEL)
+    predictor2 = switchPred(algo)
     for i, pair in enumerate(ddataset.pathPairs):
         audioFileName, audiofile, _ = pair
         audiofile = os.path.abspath(audiofile)
         output = os.path.join(outputdir, audioFileName + ".txt")
         metaOutput = os.path.join(metaoutputdir, audioFileName + "_meta.json")
-
-        # logger.info(f'processing "{audiofile}"')
-        # if algo == "multi":
-        #     algo = AlgoSeqRecur(trainFile=USE_MODEL)
-        # elif algo == "single":
-        #     algo = AlgoSeqRecurSingle(trainFile=USE_MODEL)
-        # mirexFmt = algo(ddataset, i)
 
         ssm_f, mels_f = getFeatures(ddataset, i)
         cliques = predictor._process(ddataset, i, ssm_f)
@@ -168,6 +181,9 @@ def main(audiofiles, outputdir, metaoutputdir, algo, force, workers):
         # write output and viewer metadata
         if algo == "single":
             mirexFmt = mirexFmtSingle
+        elif algo not in ["single", "multi"]:
+            mirexFmt = predictor2(ddataset, i)
+
         writeMirexOutput(mirexFmt, output)
         figurePath = os.path.join(os.getcwd(), f"data/test/predict_{audioFileName}.svg")
         plt.savefig(figurePath, bbox_inches="tight")

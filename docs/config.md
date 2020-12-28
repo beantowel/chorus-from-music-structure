@@ -7,7 +7,7 @@
 - 依赖的路径，临时文件夹、输出文件夹的路径
   - `SA_HOME` 后续路径配置的公共前缀，是为了尽量减少绝对路径设置的。
 
-  - `ALGO_BASE_DIRS` 算法相关的路径配置，其中“TmpDir”是程序运行时临时文件存放路径。如README所述，其中“JDC”是旋律提取算法的路径，“PopMusicHighlighter”是对比算法“highlighter”结果存储路径。
+  - `ALGO_BASE_DIRS` 算法相关的路径配置，其中“TmpDir”是程序运行时临时文件存放路径。如README所述，其中“JDC”是旋律提取算法的路径，“PopMusicHighlighter”是对比算法“highlighter”的路径。
 
   - `DATASET_BASE_DIRS` 数据集路径配置，其中“RWC”是RWC数据集目录位置，“LocalTemporary_Dataset”是预处理文件或缓存结果的存储位置。
 

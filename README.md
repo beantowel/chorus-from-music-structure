@@ -35,7 +35,7 @@ git clone --depth=1 https://github.com/keums/melodyExtraction_JDC.git
 
 A few paths need to be set in `configs/configs.py`:
 
-- the code depends on the algorithm [JDC](https://github.com/keums/melodyExtraction_JDC) mentioned above, edit the value `ALGO_BASE_DIRS['JDC']` so that it points to the location of the downloaded repo.
+- ~~the code depends on the algorithm [JDC](https://github.com/keums/melodyExtraction_JDC) mentioned above, edit the value `ALGO_BASE_DIRS['JDC']` so that it points to the location of the downloaded repo.~~
 
 - the preprocessed data were stored in `DATASET_BASE_DIRS['LocalTemporary_Dataset']`, change it to anywhere you want to store the large files.
 
@@ -75,14 +75,14 @@ Options:
   --outputdir PATH
   --metaOutputdir PATH
   --algo [multi|single]
-  --force BOOLEAN
+  --force BOOLEAN        overwrite cached features.
   --help                 Show this message and exit.
 ```
 
 A Quick example is
 
 ```bash
-python predict.py ./data/example/starfall.mp3
+python predict.py ./data/example/starfall.mp3 --force false
 ```
 
 By default, the algorithm outputs all the chorus sections detected, but you can use the option `--algo single` to force it outputs a single chorus section.

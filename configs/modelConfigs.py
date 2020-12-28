@@ -5,7 +5,7 @@ from collections import defaultdict
 
 
 # preprocess transforms
-SSM_USING_MELODY = False
+SSM_USING_MELODY = True
 MEL_TRANSFORM_IDENTIFIER = 8
 SSM_TRANSFORM_IDENTIFIER = (
     11 if not SSM_USING_MELODY else 12

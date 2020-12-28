@@ -1,0 +1,5 @@
+tensorflow==1.2.0
+numpy==1.18.5
+librosa==0.8.0
+click==7.1.2
+
