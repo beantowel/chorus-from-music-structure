@@ -27,7 +27,13 @@ from utility.algorithmsWrapper import (
     AlgoMixed,
     MsafAlgosBdryOnly,
 )
-from utility.common import logSSM, extractFunctions, getLabeledSSM, mergeIntervals
+from utility.common import (
+    logSSM,
+    extractFunctions,
+    getLabeledSSM,
+    mergeIntervals,
+    removeNumber,
+)
 
 
 def plotMats(matrices, titles, show=DEBUG):
@@ -186,6 +192,8 @@ def main(audiofiles, outputdir, metaoutputdir, algo, force, workers):
             mirexFmt = mirexFmtSingle
         elif algo not in ["single", "multi"]:
             mirexFmt = predictor2(ddataset, i)
+            mirexFmt = removeNumber(mirexFmt)
+            mirexFmt = mergeIntervals(mirexFmt)
 
         writeMirexOutput(mirexFmt, output)
         figurePath = os.path.join(os.getcwd(), f"data/test/predict_{audioFileName}.svg")

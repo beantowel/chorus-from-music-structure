@@ -2,17 +2,18 @@
 import librosa
 from madmom.audio.signal import *
 
-def spec_extraction(file_name,win_size):
+
+def spec_extraction(file_name, win_size):
     print(file_name)
 
     x_test = []
     # y, sr = librosa.load(file_name, sr=8000)
     # madmom.Signal() is faster than librosa.load()
     y = Signal(file_name, sample_rate=8000, dtype=np.float32, num_channels=1)
-    S = librosa.core.stft(y, n_fft=1024, hop_length=80*1, win_length=1024)
+    S = librosa.core.stft(y, n_fft=1024, hop_length=80 * 1, win_length=1024)
 
     x_spec = np.abs(S)
-    x_spec  = librosa.core.power_to_db(x_spec,ref=np.max)
+    x_spec = librosa.core.power_to_db(x_spec, ref=np.max)
     x_spec = x_spec.astype(np.float32)
     num_frames = x_spec.shape[1]
 
@@ -31,9 +32,9 @@ def spec_extraction(file_name,win_size):
 
     # for normalization
 
-    x_train_mean = np.load('./x_data_mean_total_31.npy')
-    x_train_std = np.load('./x_data_std_total_31.npy')
-    x_test = (x_test-x_train_mean)/(x_train_std+0.0001)
+    x_train_mean = np.load("./x_data_mean_total_31.npy")
+    x_train_std = np.load("./x_data_std_total_31.npy")
+    x_test = (x_test - x_train_mean) / (x_train_std + 0.0001)
     x_test = x_test[:, :, :, np.newaxis]
 
     return x_test, x_spec
