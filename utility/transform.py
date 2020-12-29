@@ -102,19 +102,28 @@ class GenerateSSM(BaseTransform):
 class ExtractMel(BaseTransform):
     def __init__(self, identifier=MEL_TRANSFORM_IDENTIFIER):
         super(ExtractMel, self).__init__(identifier)
-        self.algoDir = ALGO_BASE_DIRS["JDC"]
+
+    def JDC(self, wavPath, output, sr=SAMPLE_RATE):
+        """<Joint Detection and Classification of Singing Voice Melody Using Convolutional Recurrent Neural Networks>"""
+        commands = ("python", "./melodyExtraction_JDC.py", wavPath, output)
+        ret = subprocess.call(commands, cwd=ALGO_BASE_DIRS["JDC"])
+        assert ret == 0, f"return value: {ret} != 0"
+        times, pitches = load_time_series(output, delimiter=r"\s+|,")
+        return {"times": times, "pitches": pitches}
+
+    def SSL(self, wavPath, output, sr=SAMPLE_RATE):
+        """<Semi-supervised learning using teacher-student models for vocal melody extraction>"""
+        commands = ("python", "./melodyExtraction_NS.py", "-p", wavPath, "-o", output)
+        ret = subprocess.call(commands, cwd=ALGO_BASE_DIRS["SSL"])
+        assert ret == 0, f"return value: {ret} != 0"
+        times, pitches = load_time_series(output, delimiter=r"\s+|,")
+        return {"times": times, "pitches": pitches}
 
     def preprocessor(self, wavPath, sr=SAMPLE_RATE):
-        """<Joint Detection and Classification of Singing Voice Melody Using Convolutional Recurrent Neural Networks>"""
         wavPath = os.path.abspath(wavPath)
         title = os.path.splitext(os.path.basename(wavPath))[0]
-        melPath = os.path.join(ALGO_BASE_DIRS["TmpDir"], f"{title}_JDC_out.csv")
-        excPath = os.path.join(self.algoDir, "melodyExtraction_JDC.py")
-        commands = ("python", excPath, wavPath, melPath)
-        ret = subprocess.call(commands, cwd=self.algoDir)
-        assert ret == 0, f"return value: {ret} != 0"
-        times, pitches = load_time_series(melPath, delimiter=r"\s+|,")
-        return {"times": times, "pitches": pitches}
+        tmpMel = os.path.join(ALGO_BASE_DIRS["TmpDir"], f"{title}_JDC_out.csv")
+        return self.SSL(wavPath, tmpMel)
 
     def transform(self, sample):
         feature = sample["feature"]

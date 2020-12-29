@@ -25,8 +25,8 @@ SSM_FEATURES = {
 
 # pitch chroma feature
 PITCH_CHROMA_CLASS = 12
-PITCH_CHROMA_COUNT = 30
-PITCH_CHROMA_HOP = 3
+PITCH_CHROMA_COUNT = 100
+PITCH_CHROMA_HOP = 1
 # PITCH_CHROMA_CLASS = int(os.getenv("PC_CLASS"))
 # PITCH_CHROMA_COUNT = int(os.getenv("PC_STEP"))
 # PITCH_CHROMA_HOP = int(os.getenv("PC_SEQ"))
@@ -71,13 +71,18 @@ MINIMUM_CHORUS_DUR = 10
 
 
 # predict model file
-USE_DATASET_NAME = "RWC"
+USE_DATASET_NAME = ["RWC_Popular_Dataset", "CCM_Dataset"][0]
 USE_MODEL_DIC = {
-    "RWC": os.path.join(
-        f"data/models/RWC_Popular_Dataset_tf{SSM_TRANSFORM_IDENTIFIER}_seqRecur_TRAIN.pkl",
-    ),
-    "CCMusic": os.path.join(
-        f"data/models/CCM_Dataset_tf{SSM_TRANSFORM_IDENTIFIER}_seqRecur_TRAIN.pkl",
-    ),
+    algo: f"data/models/{USE_DATASET_NAME}_{algo}_TRAIN.pkl"
+    for algo in [
+        "scluster",
+        "cnmf",
+        "sf",
+        "olda",
+        "foote",
+        "gtBoundary",
+    ]
 }
-USE_MODEL = USE_MODEL_DIC[USE_DATASET_NAME]
+USE_MODEL_DIC[
+    "seqRecur"
+] = f"data/models/{USE_DATASET_NAME}_tf{SSM_TRANSFORM_IDENTIFIER}_seqRecur_TRAIN.pkl"

@@ -60,8 +60,6 @@ If you want to evaluate the algorithms, more configurations need to be done:
        └── RWC研究用音楽データベース Disc 7
     ```
 
-- for evaluation of the algorithms implemented by [msaf](https://github.com/urinieto/msaf) python package, comment out the line 335 `file_struct.features_file = msaf.config.features_tmp_file` in `.../lib/python3.7/site-packages/msaf/run.py` and `mkdir features` in the dataset folder for faster performance using feature cache instead of single temporary feature file.
-
 - for evaluation of the [pop-music-highlighter](https://github.com/remyhuang/pop-music-highlighter), since the python version is not compatible with that of the highlighter, you need to get its result in advance and set the value of `ALGO_BASE_DIRS['PopMusicHighlighter']` so that it points to the location containing the results as `<originalAudioFileName>_highlight.npy` files.
 
 ## Usage

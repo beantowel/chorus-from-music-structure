@@ -6,6 +6,8 @@ from scipy.stats import mode
 from scipy.sparse.csgraph import floyd_warshall
 from sklearn.cluster import AffinityPropagation
 import matplotlib.pyplot as plt
+import networkx as nx
+from itertools import product
 
 from utility.common import cliquesFromArr, filteredCliqueEnds, getLabeledSSM, printArray
 from configs.modelConfigs import (
@@ -48,6 +50,42 @@ def smoothCliques(cliques, size, kernel_size=SMOOTH_KERNEL_SIZE):
 
     newCliques = cliquesFromArr(arr)
     return newCliques
+
+
+# def cliquesFromSSM(ssm_f, show=False):
+#     def selectClique(cliques):
+#         lens = [len(c) for c in cliques]
+#         groupCounts = [len(filteredCliqueEnds(c, gap=10)[0]) for c in cliques]
+#         ind = np.lexsort((lens, groupCounts))
+#         return cliques[ind[-1]]
+
+#     CLIQUE_CANDIDATES_COUNT = 7000
+#     ssm = ssm_f[1]
+#     size = ssm.shape[-1]
+
+#     threshSSM = np.zeros_like(ssm, dtype=np.uint8)
+#     for i, j in product(range(size), range(size)):
+#         threshSSM[i, j] = 1 if ssm[i, j] >= SSM_LOG_THRESH else 0
+
+#     g = nx.from_numpy_matrix(threshSSM)
+#     gShow = deepcopy(g)
+#     cliques = []
+#     while g:
+#         candidates = list(
+#             [c for i, c in zip(range(CLIQUE_CANDIDATES_COUNT), nx.find_cliques(g))]
+#         )
+#         c = selectClique(candidates)
+
+#         g.remove_nodes_from(c)
+#         cliques.insert(0, sorted(list(c)))
+#         if show:
+#             if len(cliques) % 10 == 0:
+#                 mat = nx.to_numpy_matrix(gShow) * 5
+#                 mat += getLabeledSSM(cliques, size)
+#                 plt.imshow(mat)
+#                 plt.show()
+#     cliques = sorted(cliques, key=lambda c: c[0])
+#     return cliques
 
 
 def cliquesFromSSM(ssm_f, show=False):
@@ -163,7 +201,7 @@ def buildRecurrence(cliques, times):
         )
         for dis in DELTA_DIS_RANGE
         for kernelSize in SMOOTH_KERNEL_SIZE_RANGE
-        for dblock in [0]
+        for dblock in [0, 1, 2]
     ]
     # mclen = len(mergedCliquesList)
     # for i in range(1):

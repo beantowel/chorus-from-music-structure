@@ -13,7 +13,7 @@ from configs.configs import logger, DEBUG, PRED_DIR, VIEWER_DATA_DIR, NUM_WORKER
 from configs.modelConfigs import (
     SSM_TIME_STEP,
     CLF_TARGET_LABEL,
-    USE_MODEL,
+    USE_MODEL_DIC,
     CHORUS_DURATION,
     CHORUS_DURATION_SINGLE,
     TUNE_WINDOW,
@@ -25,6 +25,7 @@ from utility.algorithmsWrapper import (
     AlgoSeqRecurSingle,
     PopMusicHighlighter,
     AlgoMixed,
+    MsafAlgosBdryOnly,
 )
 from utility.common import logSSM, extractFunctions, getLabeledSSM, mergeIntervals
 
@@ -107,8 +108,10 @@ def drawSegments(ref, est, ssm, times):
 def switchPred(algo):
     if algo == "highlighter":
         return PopMusicHighlighter()
+    elif algo == "sf":
+        return MsafAlgosBdryOnly("sf", USE_MODEL_DIC["sf"])
     elif algo == "mixed":
-        return AlgoMixed()
+        return AlgoMixed(USE_MODEL_DIC["seqRecur"])
     else:
         return None
 
@@ -120,7 +123,7 @@ def switchPred(algo):
 @click.option(
     "--algo",
     nargs=1,
-    type=click.Choice(["multi", "single", "highlighter", "mixed"]),
+    type=click.Choice(["multi", "single", "highlighter", "sf", "mixed"]),
     default="multi",
 )
 @click.option(
@@ -140,7 +143,7 @@ def main(audiofiles, outputdir, metaoutputdir, algo, force, workers):
         preDataset = Preprocess_Dataset(tf.identifier, ddataset)
         preDataset.build(tf.preprocessor, force=force, num_workers=workers)
 
-    predictor = AlgoSeqRecur(trainFile=USE_MODEL)
+    predictor = AlgoSeqRecur(trainFile=USE_MODEL_DIC["seqRecur"])
     predictor2 = switchPred(algo)
     for i, pair in enumerate(ddataset.pathPairs):
         audioFileName, audiofile, _ = pair

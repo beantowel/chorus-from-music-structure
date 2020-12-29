@@ -13,6 +13,7 @@ from utility.algorithmsWrapper import (
     MsafAlgosBound,
     PopMusicHighlighter,
     RefraiD,
+    AlgoMixed,
 )
 from utility.metrics import AlgoEvaluator, Metrics_Saver
 from configs.configs import EVAL_RESULT_DIR, FORCE_EVAL, METRIC_NAMES, logger
@@ -49,11 +50,12 @@ algos = {
     "cnmf+": MsafAlgosBound("cnmf"),
     "foote+": MsafAlgosBound("foote"),
     "gtBoundary": GroudTruthStructure(trainData["gtBoundary"]),
+    "mixed": AlgoMixed(trainData["seqRecur"]),
 }
 algo_order = [
     "seqRecur",
     "seqRecurS",
-    "olda",
+    "mixed" "olda",
     "highlighter",
     # "refraiD",
     "scluster",

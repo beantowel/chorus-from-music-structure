@@ -1,4 +1,3 @@
-import msaf
 import os
 import json
 import subprocess
@@ -10,6 +9,7 @@ from mir_eval.io import load_labeled_intervals
 
 from models.classifier import ChorusClassifier, chorusDetection, getFeatures
 from utility.transform import ExtractCliques, GenerateSSM
+from third_party.msaf.msafWrapper import process
 from models.seqRecur import buildRecurrence, smoothCliques
 from models.pickSingle import maxOverlap, tuneIntervals
 from utility.dataset import DATASET_BASE_DIRS, Preprocess_Dataset, convertFileName
@@ -28,7 +28,6 @@ from configs.modelConfigs import (
     SMOOTH_KERNEL_SIZE,
     SSM_LOG_THRESH,
     TUNE_WINDOW,
-    USE_MODEL,
     CLF_TARGET_LABEL,
 )
 from configs.configs import logger, ALGO_BASE_DIRS
@@ -95,33 +94,48 @@ class AlgoSeqRecurBound:
         return mirexFmt
 
 
-# comment out the line 335 'file_struct.features_file = msaf.config.features_tmp_file'
-# in XX/lib/python3.7/site-packages/msaf/run.py
-# and 'mkdir features' in the dataset folder
-# for faster performance using feature cache instead of single temporary feature
-class MsafAlgos:
-    def __init__(self, boundaries_id, trainFile):
+class BaseMsafAlgos:
+    def __init__(self, boundaries_id, trainFile, valid_ids):
         # msaf.get_all_label_algorithms()：
-        assert boundaries_id in ["vmo", "scluster", "cnmf"]
+        assert boundaries_id in valid_ids
         self.bd = boundaries_id
         self.clf = ChorusClassifier(trainFile)
+        self.cacheDir = os.path.join(
+            DATASET_BASE_DIRS["LocalTemporary_Dataset"], "msaf-cache"
+        )
 
     def __call__(self, dataset, idx):
         ssm_f, mels_f = getFeatures(dataset, idx)
-        sample = dataset[idx]
-        wavPath = sample["wavPath"]
-        cliques = self._process(wavPath, ssm_f[0])
+        cliques = self._process(dataset, idx, ssm_f)
         mirexFmt = chorusDetection(cliques, ssm_f[0], mels_f, self.clf)
         return mirexFmt
 
     def getStructure(self, dataset, idx):
         ssm_f, _ = getFeatures(dataset, idx)
-        sample = dataset[idx]
-        wavPath = sample["wavPath"]
-        return self._process(wavPath, ssm_f[0])
+        return self._process(dataset, idx, ssm_f)
 
-    def _process(self, wavPath, times):
-        boundaries, labels = msaf.process(wavPath, boundaries_id=self.bd)
+    def cacheFile(self, dataset, idx):
+        title = dataset[idx]["title"]
+        dname = dataset.__class__.__name__
+        feature_file = os.path.join(self.cacheDir, f"{dname}-{title}-feat.json")
+        est_file = os.path.join(self.cacheDir, f"{dname}-{title}-est.jams")
+        return feature_file, est_file
+
+    def _process(self, dataset, idx, ssm_f):
+        raise NotImplementedError
+
+
+class MsafAlgos(BaseMsafAlgos):
+    def __init__(self, boundaries_id, trainFile):
+        super(MsafAlgos, self).__init__(
+            boundaries_id, trainFile, ["vmo", "scluster", "cnmf"]
+        )
+
+    def _process(self, dataset, idx, ssm_f):
+        wavPath = dataset[idx]["wavPath"]
+        times = ssm_f[0]
+        feat, est = self.cacheFile(dataset, idx)
+        boundaries, labels = process(wavPath, self.bd, feat, est)
         tIntvs = np.array([boundaries[:-1], boundaries[1:]]).T
         arr = np.zeros(len(times) - 1, dtype=int)
         for tIntv, label in zip(tIntvs, labels):
@@ -133,51 +147,17 @@ class MsafAlgos:
         return newCliques
 
 
-class MsafAlgosBound:
-    def __init__(self, boundaries_id):
-        # msaf.get_all_boundary_algorithms():
-        assert boundaries_id in ["scluster", "sf", "olda", "cnmf", "foote"]
-        self.bd = boundaries_id
-
-    def __call__(self, dataset, idx):
-        sample = dataset[idx]
-        wavPath = sample["wavPath"]
-        gt = sample["gt"]
-        boundaries, _ = msaf.process(wavPath, boundaries_id=self.bd)
-        est_intvs = np.array([boundaries[:-1], boundaries[1:]]).T
-        est_labels = matchLabel(est_intvs, gt)
-        dur = librosa.get_duration(filename=wavPath)
-        while est_intvs[-1][0] >= dur:
-            est_intvs = est_intvs[:-1]
-            est_labels = est_labels[:-1]
-        est_intvs[-1][1] = dur
-        return (est_intvs, est_labels)
-
-
-class MsafAlgosBdryOnly:
+class MsafAlgosBdryOnly(BaseMsafAlgos):
     def __init__(self, boundaries_id, trainFile):
-        # msaf.get_all_label_algorithms()：
-        assert boundaries_id in ["sf", "olda", "foote"]
-        self.bd = boundaries_id
-        self.clf = ChorusClassifier(trainFile)
+        super(MsafAlgosBdryOnly, self).__init__(
+            boundaries_id, trainFile, ["sf", "olda", "foote"]
+        )
 
-    def __call__(self, dataset, idx):
-        ssm_f, mels_f = getFeatures(dataset, idx)
-        sample = dataset[idx]
-        wavPath = sample["wavPath"]
-        cliques = self._process(wavPath, ssm_f)
-        mirexFmt = chorusDetection(cliques, ssm_f[0], mels_f, self.clf)
-        return mirexFmt
-
-    def getStructure(self, dataset, idx):
-        ssm_f, _ = getFeatures(dataset, idx)
-        sample = dataset[idx]
-        wavPath = sample["wavPath"]
-        return self._process(wavPath, ssm_f)
-
-    def _process(self, wavPath, ssm_f):
+    def _process(self, dataset, idx, ssm_f):
+        wavPath = dataset[idx]["wavPath"]
+        feat, est = self.cacheFile(dataset, idx)
+        boundaries, _ = process(wavPath, self.bd, feat, est)
         times = ssm_f[0]
-        boundaries, _ = msaf.process(wavPath, boundaries_id=self.bd)
         tIntvs = np.array([boundaries[:-1], boundaries[1:]]).T
 
         blockSSM = np.zeros((len(tIntvs), len(tIntvs)))
@@ -210,6 +190,28 @@ class MsafAlgosBdryOnly:
         cliques = cliquesFromArr(arr)
         newCliques = smoothCliques(cliques, len(times) - 1, SMOOTH_KERNEL_SIZE)
         return newCliques
+
+
+class MsafAlgosBound(BaseMsafAlgos):
+    def __init__(self, boundaries_id):
+        super(MsafAlgosBound, self).__init__(
+            boundaries_id, None, ["scluster", "sf", "olda", "cnmf", "foote"]
+        )
+
+    def __call__(self, dataset, idx):
+        sample = dataset[idx]
+        wavPath = sample["wavPath"]
+        gt = sample["gt"]
+        feat, est = self.cacheFile(dataset, idx)
+        boundaries, _ = process(wavPath, self.bd, feat, est)
+        est_intvs = np.array([boundaries[:-1], boundaries[1:]]).T
+        est_labels = matchLabel(est_intvs, gt)
+        dur = librosa.get_duration(filename=wavPath)
+        while est_intvs[-1][0] >= dur:
+            est_intvs = est_intvs[:-1]
+            est_labels = est_labels[:-1]
+        est_intvs[-1][1] = dur
+        return (est_intvs, est_labels)
 
 
 class GroudTruthStructure:
@@ -320,8 +322,9 @@ class RefraiD(CachedAlgo):
 
 
 class AlgoMixed:
-    def __init__(self):
-        self.pred1 = AlgoSeqRecur(trainFile=USE_MODEL)
+    def __init__(self, trainFile):
+        self.pred1 = AlgoSeqRecur(trainFile=trainFile)
+        self.clf = self.pred1.clf
         self.pred2 = PopMusicHighlighter()
 
     def mixChorus(self, mirex1, mirex2):
@@ -344,8 +347,7 @@ class AlgoMixed:
             )
             chorusIntsec.append(intsec)
         nonzeros = np.nonzero(chorusIntsec)[0]
-        selectIndex = nonzeros[0] if len(nonzeros) > 0 else 0
-        idx = chorus1[selectIndex]
+        idx = chorus1[nonzeros[0]] if len(nonzeros) > 0 else 0
 
         begin, end = mirex1[0][idx]
         return singleChorusSection(begin, end, dur)

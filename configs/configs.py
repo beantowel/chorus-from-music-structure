@@ -5,6 +5,7 @@ SA_HOME = os.environ["HOME"] + "/FDU/MIR"
 # dependency location and location to store temporary files running the dependencies
 ALGO_BASE_DIRS = {
     "JDC": f"{os.getcwd()}/third_party/melodyExtraction_JDC",
+    "SSL": f"{os.getcwd()}/third_party/melodyExtraction_SSL",
     "PopMusicHighlighter": f"{os.getcwd()}/third_party/pop-music-highlighter",
     "TmpDir": "/tmp/MIR",
 }
@@ -23,7 +24,7 @@ VIEWER_DATA_DIR = "data/viewerMetadata"
 PRED_DIR = "data/predict"
 
 # process numbers for parallel computing
-NUM_WORKERS = os.cpu_count() // 2
+NUM_WORKERS = 1  # os.cpu_count() // 2
 
 # evaluation settings
 FORCE_EVAL = False
@@ -73,9 +74,6 @@ mk_dirs = [
     PRED_DIR,
     ALGO_BASE_DIRS["TmpDir"],
     DATASET_BASE_DIRS["LocalTemporary_Dataset"],
-    # os.path.join(DATASET_BASE_DIRS["SALAMI"], "features"),
-    os.path.join(DATASET_BASE_DIRS["RWC"], "RWC-MDB-P-2001/features"),
-    os.path.join(DATASET_BASE_DIRS["CCM"], "features"),
 ]
 for path in mk_dirs:
     if not os.path.exists(path):
