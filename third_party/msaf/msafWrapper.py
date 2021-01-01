@@ -279,8 +279,6 @@ def process(
     framesync=False,
     labels_id=msaf.config.default_label_id,
     hier=False,
-    sonify_bounds=False,
-    plot=False,
     n_jobs=4,
     annotator_id=0,
     config=None,
@@ -363,21 +361,18 @@ def process(
         file_struct, boundaries_id, labels_id, config, annotator_id=annotator_id
     )
 
-    if sonify_bounds:
-        logging.info("Sonifying boundaries in %s..." % out_bounds)
-        audio_hq, sr = librosa.load(in_path, sr=out_sr)
-        utils.sonify_clicks(audio_hq, est_times, out_bounds, out_sr)
-
-    if plot:
-        plotting.plot_one_track(
-            file_struct, est_times, est_labels, boundaries_id, labels_id
-        )
-
     # TODO: Only save if needed
     # Save estimations
     msaf.utils.ensure_dir(os.path.dirname(file_struct.est_file))
     io.save_estimations(
         file_struct, est_times, est_labels, boundaries_id, labels_id, **config
     )
+
+    # fix duration
+    dur = librosa.get_duration(filename=in_path)
+    while len(est_times) > 1 and est_times[-2] >= dur:
+        est_times = est_times[:-1]
+        est_labels = est_labels[:-1]
+    est_times[-1] = dur
 
     return est_times, est_labels

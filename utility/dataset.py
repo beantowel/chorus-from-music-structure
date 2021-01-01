@@ -400,6 +400,42 @@ class CCM_Dataset(BaseStructDataset):
         return dic
 
 
+class Huawei_Dataset(BaseStructDataset):
+    def __init__(self, baseDir=DATASET_BASE_DIRS["Huawei"], transform=None):
+        super(Huawei_Dataset, self).__init__(baseDir, transform)
+        # struct/<title>.txt
+        # audio/<title>.mp3
+        for filename in sorted(os.listdir(os.path.join(baseDir, "audio"))):
+            title = os.path.splitext(filename)[0]
+            assert (
+                os.path.splitext(filename)[1] == ".mp3"
+            ), f"{filename}: wrong extension"
+            wavPath = os.path.join(baseDir, "audio", filename)
+            GTPath = os.path.join(baseDir, "struct", title + ".txt")
+            NFDTitle = unicodedata.normalize("NFD", title)
+            if NFDTitle != title:
+                logger.warn(
+                    f"filename={wavPath} is not in unicode NFD form, expected={NFDTitle}"
+                )
+            _, labels = self.loadGT(GTPath)
+            if "chorus" in labels:
+                self.pathPairs.append(StructDataPathPair(title, wavPath, GTPath))
+            else:
+                logger.warn(f"no chorus section, file={GTPath}")
+
+    def loadGT(self, GTPath):
+        intervals, labels = load_labeled_intervals(GTPath, delimiter="\t")
+        return intervals, labels
+
+    def semanticLabelDic(self):
+        dic = {
+            "chorus": 1,
+            "verse": 2,
+            "others": 3,
+        }
+        return dic
+
+
 class Preprocess_Dataset:
     def __init__(
         self,

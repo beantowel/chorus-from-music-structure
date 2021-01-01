@@ -5,13 +5,17 @@ from utility.dataset import (
     RWC_Popular_Dataset_accomp,
     SALAMI_Dataset,
     CCM_Dataset,
+    Huawei_Dataset,
 )
 from configs.modelConfigs import SSM_TRANSFORM_IDENTIFIER, USE_DATASET_NAME
 
-USING_DATASET = {
-    "RWC_Popular_Dataset": RWC_Popular_Dataset,
-    "CCM_Dataset": CCM_Dataset,
-}[USE_DATASET_NAME]()
+DATASET_DIC = {
+    "RWC_Popular_Dataset": RWC_Popular_Dataset(),
+    "RWC_Popular_Dataset_accomp": RWC_Popular_Dataset_accomp(),
+    "CCM_Dataset": CCM_Dataset(),
+    "Huawei_Dataset": Huawei_Dataset(),
+}
+USING_DATASET = DATASET_DIC[USE_DATASET_NAME]
 
 # ssm target generation (label index)
 CLF_SPLIT_RATIO = 0.8

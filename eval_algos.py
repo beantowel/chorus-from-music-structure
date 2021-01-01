@@ -2,7 +2,12 @@ import click
 import numpy as np
 import pandas as pd
 
-from utility.dataset import RWC_Popular_Dataset, CCM_Dataset, RWC_Popular_Dataset_accomp
+from utility.dataset import (
+    RWC_Popular_Dataset,
+    CCM_Dataset,
+    RWC_Popular_Dataset_accomp,
+    Huawei_Dataset,
+)
 from utility.algorithmsWrapper import (
     AlgoSeqRecur,
     AlgoSeqRecurBound,
@@ -24,14 +29,10 @@ from configs.trainingConfigs import (
     CLF_SPLIT_RATIO,
     RANDOM_SEED,
     CHORUS_CLASSIFIER_TRAIN_DATA_FILE,
+    DATASET_DIC,
 )
 
-loaders = {
-    "RWC_Popular": RWC_Popular_Dataset(),
-    "CCM": CCM_Dataset(),
-    "RWC_Popular_accomp": RWC_Popular_Dataset_accomp(),
-    # 'SALAMI_functions': SALAMI_Dataset(annotation='functions'),
-}
+
 trainData = CHORUS_CLASSIFIER_TRAIN_DATA_FILE
 algos = {
     "seqRecur": AlgoSeqRecur(trainData["seqRecur"]),
@@ -87,13 +88,13 @@ def dumpResult(saver):
 
 
 def updateViews(evalAlgos, dName):
-    train, val = loaders[dName].randomSplit(CLF_SPLIT_RATIO, seed=RANDOM_SEED)
+    train, val = DATASET_DIC[dName].randomSplit(CLF_SPLIT_RATIO, seed=RANDOM_SEED)
     loader_views = {
         "_VAL": val,
         "_TRAIN": train,
     }
     for vName, vLoader in loader_views.items():
-        for dName, dLoader in loaders.items():
+        for dName, dLoader in DATASET_DIC.items():
             if vLoader.__class__ is dLoader.__class__:
                 name = dName + vName
                 logger.info(
@@ -113,7 +114,7 @@ def updateViews(evalAlgos, dName):
 
 
 def findLoader(clz):
-    for dName, dLoader in loaders.items():
+    for dName, dLoader in DATASET_DIC.items():
         if clz is dLoader.__class__:
             return {dName: dLoader}
     raise KeyError
@@ -131,11 +132,11 @@ def findLoader(clz):
 )
 def main(force, dataset, algorithm):
     if dataset is None:
-        evalLoader = loaders
+        evalLoader = DATASET_DIC
     elif dataset == "auto":
         evalLoader = findLoader(USING_DATASET.__class__)
     else:
-        evalLoader = {dataset: loaders[dataset]}
+        evalLoader = {dataset: DATASET_DIC[dataset]}
     if algorithm is None:
         evalAlgos = algos
     else:

@@ -15,6 +15,7 @@ DATASET_BASE_DIRS = {
     "RWC": f"{SA_HOME}/dataset/RWC",
     "RWC_accomp": f"{SA_HOME}/dataset/RWC-accompaniment",
     "CCM": f"{SA_HOME}/dataset/CCM_Structure",
+    "Huawei": f"{SA_HOME}/dataset/Huawei",
     "LocalTemporary_Dataset": f"{SA_HOME}/dataset/localTmp",
 }
 # output data location
@@ -22,9 +23,6 @@ EVAL_RESULT_DIR = "data/evalResult/"
 MODELS_DIR = "data/models"
 VIEWER_DATA_DIR = "data/viewerMetadata"
 PRED_DIR = "data/predict"
-
-# process numbers for parallel computing
-NUM_WORKERS = 1  # os.cpu_count() // 2
 
 # evaluation settings
 FORCE_EVAL = False
@@ -82,3 +80,6 @@ for path in mk_dirs:
             os.mkdir(path)
         else:
             logger.warn(f"directory={dirname} does not exist")
+
+# process numbers for parallel computing
+NUM_WORKERS = os.cpu_count() // 2 if not DEBUG else 1

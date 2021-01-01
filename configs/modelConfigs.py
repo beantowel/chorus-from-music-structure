@@ -71,7 +71,7 @@ MINIMUM_CHORUS_DUR = 10
 
 
 # predict model file
-USE_DATASET_NAME = ["RWC_Popular_Dataset", "CCM_Dataset"][0]
+USE_DATASET_NAME = ["RWC_Popular_Dataset", "CCM_Dataset", "Huawei_Dataset"][2]
 USE_MODEL_DIC = {
     algo: f"data/models/{USE_DATASET_NAME}_{algo}_TRAIN.pkl"
     for algo in [

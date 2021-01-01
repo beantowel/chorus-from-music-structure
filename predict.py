@@ -118,6 +118,8 @@ def switchPred(algo):
         return MsafAlgosBdryOnly("sf", USE_MODEL_DIC["sf"])
     elif algo == "mixed":
         return AlgoMixed(USE_MODEL_DIC["seqRecur"])
+    elif algo in ["multi", "seqRecur", "single", "seqRecurS"]:
+        return AlgoSeqRecur(trainFile=USE_MODEL_DIC["seqRecur"])
     else:
         return None
 
@@ -129,7 +131,9 @@ def switchPred(algo):
 @click.option(
     "--algo",
     nargs=1,
-    type=click.Choice(["multi", "single", "highlighter", "sf", "mixed"]),
+    type=click.Choice(
+        ["seqRecur", "seqRecurS", "multi", "single", "highlighter", "sf", "mixed"]
+    ),
     default="multi",
 )
 @click.option(
@@ -149,8 +153,12 @@ def main(audiofiles, outputdir, metaoutputdir, algo, force, workers):
         preDataset = Preprocess_Dataset(tf.identifier, ddataset)
         preDataset.build(tf.preprocessor, force=force, num_workers=workers)
 
-    predictor = AlgoSeqRecur(trainFile=USE_MODEL_DIC["seqRecur"])
-    predictor2 = switchPred(algo)
+    predictor = switchPred(algo)
+    predictorStruct = (
+        predictor
+        if algo not in ["mixed", "highlighter"]
+        else AlgoSeqRecur(trainFile=USE_MODEL_DIC["seqRecur"])
+    )
     for i, pair in enumerate(ddataset.pathPairs):
         audioFileName, audiofile, _ = pair
         audiofile = os.path.abspath(audiofile)
@@ -158,18 +166,18 @@ def main(audiofiles, outputdir, metaoutputdir, algo, force, workers):
         metaOutput = os.path.join(metaoutputdir, audioFileName + "_meta.json")
 
         ssm_f, mels_f = getFeatures(ddataset, i)
-        cliques = predictor._process(ddataset, i, ssm_f)
-        mirexFmt = chorusDetection(cliques, ssm_f[0], mels_f, predictor.clf)
+        cliques = predictorStruct._process(ddataset, i, ssm_f)
+        mirexFmt = chorusDetection(cliques, ssm_f[0], mels_f, predictorStruct.clf)
         if algo == "multi":
             mirexFmt = tuneIntervals(
                 mirexFmt, mels_f, chorusDur=CHORUS_DURATION, window=TUNE_WINDOW
             )
         elif algo == "single":
-            mirexFmtSingle = maxOverlap(
+            mirexFmt = maxOverlap(
                 mirexFmt, chorusDur=CHORUS_DURATION_SINGLE, centering=False
             )
-            mirexFmtSingle = tuneIntervals(
-                mirexFmtSingle,
+            mirexFmt = tuneIntervals(
+                mirexFmt,
                 mels_f,
                 chorusDur=CHORUS_DURATION_SINGLE,
                 window=TUNE_WINDOW,
@@ -188,10 +196,8 @@ def main(audiofiles, outputdir, metaoutputdir, algo, force, workers):
         plotMats(mats, titles, show=False)
 
         # write output and viewer metadata
-        if algo == "single":
-            mirexFmt = mirexFmtSingle
-        elif algo not in ["single", "multi"]:
-            mirexFmt = predictor2(ddataset, i)
+        if algo not in ["single", "multi"]:
+            mirexFmt = predictor(ddataset, i)
             mirexFmt = removeNumber(mirexFmt)
             mirexFmt = mergeIntervals(mirexFmt)
 

@@ -31,7 +31,7 @@ def modefilt(arr, kernel_size):
     for i in range(len(arr)):
         window = arr[max(0, i - dt) : min(len(arr), i + dt + 1)]
         m, _ = mode(window)
-        newarr[i] = m
+        newarr[i] = m[0]
     return newarr
 
 
@@ -97,7 +97,6 @@ def cliquesFromSSM(ssm_f, show=False):
     labels = affinityPropagation.fit_predict(ssm)
     # convert to cliques
     cliques = cliquesFromArr(labels)
-    cliques = sorted(cliques, key=lambda c: c[0])
     if show:
         size = ssm.shape[0]
         mat = ssm

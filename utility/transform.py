@@ -113,7 +113,11 @@ class ExtractMel(BaseTransform):
 
     def SSL(self, wavPath, output, sr=SAMPLE_RATE):
         """<Semi-supervised learning using teacher-student models for vocal melody extraction>"""
-        commands = ("python", "./melodyExtraction_NS.py", "-p", wavPath, "-o", output)
+        dirname = os.path.dirname(output) + "/"
+        output = f"pitch_{os.path.basename(wavPath)}.txt"
+        output = os.path.join(dirname, output)
+        commands = ("python", "./melodyExtraction_NS.py", "-p", wavPath, "-o", dirname)
+        logger.debug(f"SSL commands={commands}")
         ret = subprocess.call(commands, cwd=ALGO_BASE_DIRS["SSL"])
         assert ret == 0, f"return value: {ret} != 0"
         times, pitches = load_time_series(output, delimiter=r"\s+|,")
@@ -123,6 +127,7 @@ class ExtractMel(BaseTransform):
         wavPath = os.path.abspath(wavPath)
         title = os.path.splitext(os.path.basename(wavPath))[0]
         tmpMel = os.path.join(ALGO_BASE_DIRS["TmpDir"], f"{title}_JDC_out.csv")
+        logger.debug(f"convert wav={wavPath} to mel={tmpMel}")
         return self.SSL(wavPath, tmpMel)
 
     def transform(self, sample):

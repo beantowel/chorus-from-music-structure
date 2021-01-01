@@ -4,13 +4,18 @@ import subprocess
 import librosa
 import numpy as np
 from itertools import chain
+from scipy.stats import mode
 from pychorus import find_and_output_chorus
 from mir_eval.io import load_labeled_intervals
 
 from models.classifier import ChorusClassifier, chorusDetection, getFeatures
 from utility.transform import ExtractCliques, GenerateSSM
 from third_party.msaf.msafWrapper import process
-from models.seqRecur import buildRecurrence, smoothCliques
+from models.seqRecur import (
+    buildRecurrence,
+    smoothCliques,
+    affinityPropagation,
+)
 from models.pickSingle import maxOverlap, tuneIntervals
 from utility.dataset import DATASET_BASE_DIRS, Preprocess_Dataset, convertFileName
 from utility.common import (
@@ -103,6 +108,8 @@ class BaseMsafAlgos:
         self.cacheDir = os.path.join(
             DATASET_BASE_DIRS["LocalTemporary_Dataset"], "msaf-cache"
         )
+        if not os.path.exists(self.cacheDir):
+            os.mkdir(self.cacheDir)
 
     def __call__(self, dataset, idx):
         ssm_f, mels_f = getFeatures(dataset, idx)
@@ -159,36 +166,52 @@ class MsafAlgosBdryOnly(BaseMsafAlgos):
         boundaries, _ = process(wavPath, self.bd, feat, est)
         times = ssm_f[0]
         tIntvs = np.array([boundaries[:-1], boundaries[1:]]).T
-
-        blockSSM = np.zeros((len(tIntvs), len(tIntvs)))
-        for i, (xbegin, xend) in enumerate(tIntvs):
-            # left	a[i-1] < v <= a[i]
-            # right	a[i-1] <= v < a[i]
-            xlower = np.searchsorted(times, xbegin)
-            xhigher = np.searchsorted(times, xend)
-            for j, (ybegin, yend) in enumerate(tIntvs):
-                ylower = np.searchsorted(times, ybegin)
-                yhigher = np.searchsorted(times, yend)
-                size = (yhigher - ylower) * (xhigher - xlower)
+        tlen = len(tIntvs)
+        # logger.debug(f"tIntvs={tIntvs}")
+        ssm = ssm_f[1] - np.max(ssm_f[1])
+        median = np.median(ssm)
+        for i in range(ssm.shape[0]):
+            ssm[i, i] = median
+        arr = affinityPropagation.fit_predict(ssm)
+        blockSSM = np.zeros((tlen, tlen), dtype=int)
+        for i, xIntv in enumerate(tIntvs):
+            xLower = np.searchsorted(times, xIntv[0])
+            xHigher = np.searchsorted(times, xIntv[1])
+            for j in range(i + 1):
+                yIntv = tIntvs[j]
+                yLower = np.searchsorted(times, yIntv[0])
+                yHigher = np.searchsorted(times, yIntv[1])
+                size = (xHigher - xLower) + (yHigher - yLower)
                 if size > 0:
-                    blockSSM[i, j] = np.sum(
-                        ssm_f[1][xlower:xhigher, ylower:yhigher] > SSM_LOG_THRESH
+                    s = np.sum(
+                        [
+                            np.sum(arr[yLower:yHigher] == arr[x])
+                            for x in range(xLower, xHigher)
+                        ]
                     )
-                    blockSSM[i, j] = blockSSM[i, j] / size
-        labels = np.arange(len(tIntvs), dtype=int)
-        for i in range(len(labels)):
-            score = [blockSSM[i, j] for j in chain(range(i), range(i + 1, len(labels)))]
-            labelIdx = np.argmax(score)
-            if labelIdx < i:
-                labels[i] = labelIdx
+                    s = s / size
+                else:
+                    s = 0
+                blockSSM[i][j] = s
+                blockSSM[j][i] = s
+        logger.debug(f"bssm=\n{blockSSM}")
+        labels = np.arange(tlen, dtype=int)
+        for i in range(tlen):
+            for j in range(i):
+                if blockSSM[i, j] > 0:
+                    labels[i] = labels[j]
+                    break
+        logger.debug(f"labels={labels}")
 
         arr = np.zeros(len(times) - 1, dtype=int)
-        for tIntv, label in zip(tIntvs, labels):
-            lower = np.searchsorted(times, tIntv[0])
-            higher = np.searchsorted(times, tIntv[1])
-            arr[lower:higher] = label
+        for i, intv in enumerate(tIntvs):
+            lower = np.searchsorted(times, intv[0])
+            higher = np.searchsorted(times, intv[1])
+            arr[lower:higher] = labels[i]
         cliques = cliquesFromArr(arr)
-        newCliques = smoothCliques(cliques, len(times) - 1, SMOOTH_KERNEL_SIZE)
+
+        newCliques = cliques
+        # newCliques = smoothCliques(cliques, len(times) - 1, SMOOTH_KERNEL_SIZE)
         return newCliques
 
 
