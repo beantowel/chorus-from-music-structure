@@ -14,7 +14,7 @@ from msaf import utils
 from msaf import plotting
 from msaf.features import Features
 from msaf.exceptions import NoHierBoundaryError, NoAudioFileError
-import msaf.algorithms as algorithms
+from msaf import algorithms
 
 
 def get_boundaries_module(boundaries_id):

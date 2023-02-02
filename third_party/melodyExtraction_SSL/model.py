@@ -2,7 +2,7 @@ import keras.backend as KK
 import math
 from keras import backend as K
 from keras.regularizers import l2
-from keras.layers.advanced_activations import LeakyReLU, ReLU
+from keras.layers import LeakyReLU, ReLU
 from keras.models import model_from_json, Model, Sequential
 from keras.layers.core import Dense, Dropout, Activation, Flatten
 from keras.layers import (

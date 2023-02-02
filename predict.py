@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 from models.classifier import ChorusClassifier, chorusDetection, getFeatures
 from models.pickSingle import maxOverlap, tuneIntervals
-from configs.configs import logger, DEBUG, PRED_DIR, VIEWER_DATA_DIR, NUM_WORKERS
+from configs.configs import logger, DEBUG, PRED_DIR, VIEWER_DATA_DIR, NUM_WORKERS, join_path
 from configs.modelConfigs import (
     SSM_TIME_STEP,
     CLF_TARGET_LABEL,
@@ -196,13 +196,13 @@ def main(audiofiles, outputdir, metaoutputdir, algo, force, workers):
         plotMats(mats, titles, show=False)
 
         # write output and viewer metadata
-        if algo not in ["single", "multi"]:
-            mirexFmt = predictor(ddataset, i)
-            mirexFmt = removeNumber(mirexFmt)
-            mirexFmt = mergeIntervals(mirexFmt)
+        # if algo not in ["single", "multi"]:
+        #     mirexFmt = predictor(ddataset, i)
+        #     mirexFmt = removeNumber(mirexFmt)
+        #     mirexFmt = mergeIntervals(mirexFmt)
 
         writeMirexOutput(mirexFmt, output)
-        figurePath = os.path.join(os.getcwd(), f"data/test/predict_{audioFileName}.svg")
+        figurePath = os.path.join(os.getcwd(), join_path(f"data/test/predict_{audioFileName}.svg"))
         plt.savefig(figurePath, bbox_inches="tight")
         writeJsonMetadata(audiofile, mergeIntervals(mirexFmt), figurePath, metaOutput)
         if DEBUG:

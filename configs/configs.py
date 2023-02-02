@@ -1,22 +1,23 @@
 import os
 import logging
 
-SA_HOME = os.environ["HOME"] + "/FDU/MIR"
+join_path = lambda x: os.path.join(*x.split("/"))
+SA_HOME = os.getcwd()
 # dependency location and location to store temporary files running the dependencies
 ALGO_BASE_DIRS = {
-    "JDC": f"{os.getcwd()}/third_party/melodyExtraction_JDC",
-    "SSL": f"{os.getcwd()}/third_party/melodyExtraction_SSL",
-    "PopMusicHighlighter": f"{os.getcwd()}/third_party/pop-music-highlighter",
-    "TmpDir": "/tmp/MIR",
+    "JDC": join_path(f"{os.getcwd()}/third_party/melodyExtraction_JDC"),
+    "SSL": join_path(f"{os.getcwd()}/third_party/melodyExtraction_SSL"),
+    "PopMusicHighlighter": join_path(f"{os.getcwd()}/third_party/pop-music-highlighter"),
+    "TmpDir": join_path(f"{SA_HOME}/tmp"),
 }
 # dataset location and preprocess cache files location
 DATASET_BASE_DIRS = {
-    "SALAMI": f"{SA_HOME}/dataset/salami",
-    "RWC": f"{SA_HOME}/dataset/RWC",
-    "RWC_accomp": f"{SA_HOME}/dataset/RWC-accompaniment",
-    "CCM": f"{SA_HOME}/dataset/CCM_Structure",
-    "Huawei": f"{SA_HOME}/dataset/Huawei",
-    "LocalTemporary_Dataset": f"{SA_HOME}/dataset/localTmp",
+    "SALAMI": join_path(f"{SA_HOME}/dataset/salami"),
+    "RWC": join_path(f"{SA_HOME}/dataset/RWC"),
+    "RWC_accomp": join_path(f"{SA_HOME}/dataset/RWC-accompaniment"),
+    "CCM": join_path(f"{SA_HOME}/dataset/CCM_Structure"),
+    "Huawei": join_path(f"{SA_HOME}/dataset/Huawei"),
+    "LocalTemporary_Dataset": join_path(f"{SA_HOME}/dataset/localTmp"),
 }
 # output data location
 EVAL_RESULT_DIR = "data/evalResult/"

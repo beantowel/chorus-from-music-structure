@@ -44,7 +44,7 @@ def melodyExtraction_NS(file_name, output_path, gpu_index):
             est_pitch[i] = 2 ** ((pitch_MIDI - 69) / 12.0) * 440
 
     """ save results """
-    PATH_est_pitch = output_path + "pitch_" + file_name.split("/")[-1] + ".txt"
+    PATH_est_pitch = os.path.join(output_path, "pitch_"+os.path.basename(file_name)+".txt")
     if not os.path.exists(os.path.dirname(PATH_est_pitch)):
         os.makedirs(os.path.dirname(PATH_est_pitch))
     f = open(PATH_est_pitch, "w")

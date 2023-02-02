@@ -1,6 +1,6 @@
 import librosa
 import subprocess
-import msaf
+from third_party import msaf
 import os
 import pickle
 import numpy as np
@@ -113,7 +113,7 @@ class ExtractMel(BaseTransform):
 
     def SSL(self, wavPath, output, sr=SAMPLE_RATE):
         """<Semi-supervised learning using teacher-student models for vocal melody extraction>"""
-        dirname = os.path.dirname(output) + "/"
+        dirname = os.path.dirname(output)
         output = f"pitch_{os.path.basename(wavPath)}.txt"
         output = os.path.join(dirname, output)
         commands = ("python", "./melodyExtraction_NS.py", "-p", wavPath, "-o", dirname)

@@ -13,6 +13,8 @@ test*.py
 data/predict/*
 data/test/
 data/viewerMetadata/*
+tmp
+dataset
 
 # third-pary venv
 third_pary/pop-music-highlighter/venv
